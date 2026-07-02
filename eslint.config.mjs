@@ -13,6 +13,13 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // 로컬스토리지 하이드레이션 및 외부 상태(스토어/URL) 동기화를 위해
+      // 마운트 시 effect 안에서 setState 하는 패턴을 의도적으로 사용한다.
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
