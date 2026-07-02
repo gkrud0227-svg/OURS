@@ -20,6 +20,13 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "off",
     },
   },
+  {
+    files: ["src/server/instagram-local/*.js"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
