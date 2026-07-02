@@ -75,6 +75,18 @@ input[type="range"].accent-range {
   background: transparent;
 }
 
+.ig-clamp-2 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.ig-text-cell {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
 @keyframes ntShimmer {
   0% {
     background-position: -420px 0;
