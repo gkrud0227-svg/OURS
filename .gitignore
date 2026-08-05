@@ -37,6 +37,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# 대용량 로컬 캐시/캡처/로그 (재생성됨 · 배포는 Supabase 사용)
+/data/
+/.playwright-mcp/
+/logs/
+/public/_preview_*.html
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

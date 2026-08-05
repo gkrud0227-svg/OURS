@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import type { YouTubeStat, YouTubeVideoLite } from "@/lib/types";
+import { analyzeReasons } from "@/lib/reasons";
+import { loadInstagramCaptions } from "@/lib/instagram-captions";
 
 const SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 const VIDEOS_URL = "https://www.googleapis.com/youtube/v3/videos";
@@ -20,29 +22,46 @@ interface SearchItem {
 }
 interface VideoItem {
   id: string;
-  snippet?: { title?: string; channelTitle?: string; publishedAt?: string };
+  snippet?: {
+    title?: string;
+    channelTitle?: string;
+    publishedAt?: string;
+    description?: string;
+  };
   statistics?: { viewCount?: string };
   contentDetails?: { duration?: string };
 }
+
+/** 지역코드 → 검색 언어 매핑 (해외 신호 조회용) */
+const REGION_LANG: Record<string, string> = {
+  KR: "ko",
+  US: "en",
+  GB: "en",
+  JP: "ja",
+  TW: "zh-Hant",
+  FR: "fr",
+  DE: "de",
+};
 
 async function searchTotals(
   keyword: string,
   key: string,
   publishedAfter: string,
-  duration?: "short" | "medium" | "long",
+  region = "KR",
 ): Promise<{ ids: string[]; total: number }> {
   const params = new URLSearchParams({
     key,
     part: "snippet",
     type: "video",
     order: "viewCount",
-    maxResults: duration ? "1" : "25", // 개수만 필요할 땐 페이로드 최소화
-    regionCode: "KR",
-    relevanceLanguage: "ko",
+    // search.list는 25건이든 50건이든 똑같이 100 units를 쓴다 → 표본은 최대치(50)로.
+    // (videos.list는 한 번에 id 50개까지 받으므로 추가 호출 없이 처리됨)
+    maxResults: "50",
+    regionCode: region,
+    relevanceLanguage: REGION_LANG[region] ?? "en",
     publishedAfter,
     q: keyword,
   });
-  if (duration) params.set("videoDuration", duration);
 
   const res = await fetch(`${SEARCH_URL}?${params}`, { cache: "no-store" });
   if (!res.ok) {
@@ -63,11 +82,12 @@ async function statFor(
   keyword: string,
   key: string,
   windowDays: number,
+  region = "KR",
 ): Promise<YouTubeStat | null> {
   const publishedAfter = new Date(Date.now() - windowDays * MS_PER_DAY).toISOString();
 
   // 검색 1회로 전체 매칭 수(추정)와 샘플 영상 ids를 얻는다. (쿼터 절약)
-  const all = await searchTotals(keyword, key, publishedAfter);
+  const all = await searchTotals(keyword, key, publishedAfter, region);
   const ids = all.ids;
   const videoCount = all.total;
 
@@ -102,12 +122,14 @@ async function statFor(
   let totalViews = 0;
   let sampledShorts = 0;
   let top: YouTubeVideoLite | null = null;
+  const texts: string[] = [];
 
   for (const v of items) {
     const views = Number(v.statistics?.viewCount ?? 0);
     const isShort = parseDurationSec(v.contentDetails?.duration ?? "") <= 60;
     totalViews += views;
     if (isShort) sampledShorts += 1;
+    texts.push(`${v.snippet?.title ?? ""} ${v.snippet?.description ?? ""}`);
     const lite: YouTubeVideoLite = {
       videoId: v.id,
       title: v.snippet?.title ?? "",
@@ -125,6 +147,13 @@ async function statFor(
     ? Math.round(videoCount * (sampledShorts / sampled))
     : 0;
   const longCount = Math.max(0, videoCount - shortCount);
+
+  // 로컬 수집한 Instagram 캡션(소비자 언어)을 이유 태그 코퍼스에 합산. (국내 전용)
+  const igDocs = region === "KR" ? loadInstagramCaptions(keyword) : [];
+  const reasons = analyzeReasons([...texts, ...igDocs], region === "KR" ? "ko" : "en");
+  reasons.ytDocCount = texts.length;
+  reasons.igDocCount = igDocs.length;
+
   return {
     videoCount,
     shortCount,
@@ -133,6 +162,7 @@ async function statFor(
     totalViews,
     avgViews: sampled ? Math.round(totalViews / sampled) : 0,
     topVideo: top,
+    reasons,
     windowDays,
     fetchedAt: new Date().toISOString(),
   };
@@ -150,7 +180,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { keywords?: string[]; days?: number };
+  let body: { keywords?: string[]; days?: number; region?: string };
   try {
     body = await request.json();
   } catch {
@@ -164,13 +194,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "조회할 키워드가 없습니다." }, { status: 400 });
   }
   const windowDays = Math.min(Math.max(body.days ?? 28, 1), 90);
+  const region = (body.region ?? "KR").toUpperCase();
 
   const stats: Record<string, YouTubeStat> = {};
   let firstError: string | null = null;
 
   const settled = await Promise.allSettled(
     keywords.map(async (kw) => {
-      const stat = await statFor(kw, key, windowDays);
+      const stat = await statFor(kw, key, windowDays, region);
       if (stat) stats[kw] = stat;
     }),
   );

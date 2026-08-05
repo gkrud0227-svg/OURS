@@ -6,9 +6,11 @@ import { useParams } from "next/navigation";
 import { useStore } from "@/lib/store-context";
 import { computeTrend, lastWeeks } from "@/lib/trend";
 import { formatCount, formatDateTime, formatPct, pctColor } from "@/lib/format";
-import { StatusBadge } from "@/components/StatusBadge";
+import { PatternTag, StatusBadge } from "@/components/StatusBadge";
 import { TrendChart } from "@/components/TrendChart";
 import { SocialPanels } from "@/components/SocialPanels";
+import { ReasonTags } from "@/components/ReasonTags";
+import { CoKeywords } from "@/components/CoKeywords";
 
 export default function KeywordDetailPage() {
   const params = useParams<{ id: string }>();
@@ -87,11 +89,22 @@ export default function KeywordDetailPage() {
               {keyword.name}
             </h1>
             <StatusBadge status={t.status} size="md" />
+            <PatternTag pattern={t.pattern} streak={t.streak} />
           </div>
           <p className="mt-1 text-sm text-neutral-500">
-            {keyword.category} · 전주 대비{" "}
-            <span className={`font-medium ${pctColor(t.riseRate)}`}>
-              {formatPct(t.riseRate)}
+            {keyword.category} ·{" "}
+            <span title="최근 2주 평균 대비 이전 2주 평균 변화율" className="cursor-help">
+              4주 상승률{" "}
+              <span className={`font-medium ${pctColor(t.riseRate)}`}>
+                {formatPct(t.riseRate)}
+              </span>
+            </span>
+            {" · "}
+            <span title="마지막 완결 주 vs 그 전주 (참고용)" className="cursor-help">
+              전주 대비{" "}
+              <span className={`font-medium ${pctColor(t.weeklyRate)}`}>
+                {formatPct(t.weeklyRate)}
+              </span>
             </span>
             {keyword.volumeTotal != null && (
               <> · 월 검색량 {formatCount(keyword.volumeTotal)}</>
@@ -226,6 +239,10 @@ export default function KeywordDetailPage() {
       </div>
 
       <SocialPanels keyword={keyword} />
+
+      <ReasonTags keyword={keyword} />
+
+      <CoKeywords keyword={keyword} />
     </div>
   );
 }

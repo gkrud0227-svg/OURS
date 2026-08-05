@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/food-news",
+      "schedule": "7 23 * * *"
+    },
+    {
+      "path": "/api/discovery-cron",
+      "schedule": "30 21 * * *"
+    },
+    {
+      "path": "/api/odm-cron",
+      "schedule": "0 13 * * *"
+    }
+  ]
+}

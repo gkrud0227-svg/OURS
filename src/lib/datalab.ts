@@ -9,11 +9,16 @@ export interface DataLabResult {
  */
 export async function fetchDataLab(
   keywords: string[],
+  opts?: { startDate?: string; endDate?: string },
 ): Promise<DataLabResult[]> {
   const res = await fetch("/api/datalab", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ keywords }),
+    body: JSON.stringify({
+      keywords,
+      ...(opts?.startDate ? { startDate: opts.startDate } : {}),
+      ...(opts?.endDate ? { endDate: opts.endDate } : {}),
+    }),
   });
 
   let json: unknown;

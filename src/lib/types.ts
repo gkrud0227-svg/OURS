@@ -33,8 +33,23 @@ export interface Keyword {
 
 /* ---------- 키워드 발굴 (검색광고 keywordstool) ---------- */
 
+/** 발굴 출처 — 유튜브 콘텐츠 / 네이버 검색 자동완성 / 둘 다 */
+export type DiscoverySource = "youtube" | "search" | "both";
+
 export interface Candidate {
   name: string;
+  /** 이 후보를 떠올린 발굴 소스 */
+  source?: DiscoverySource;
+  /** 유튜브 콘텐츠 확산 배수(lift) — 국내 발굴 탭 공유용 */
+  lift?: number;
+  /** 최근 이 용어를 쓴 채널 수 */
+  dfRecent?: number;
+  /** 과거 기준선에 없던 신조어인가 */
+  novel?: boolean;
+  /** 쇼핑 구매의향(검색 상승 후보만) — 국내 발굴 탭 공유용 */
+  shop?: import("./shopping").ShoppingTrend;
+  /** 식품 맥락 판정 — 유튜브 발굴 후보에만 있음(비식품이면 랭킹에서 강등) */
+  contextTag?: "food" | "neutral" | "nonfood";
   /** 월간 PC 검색량 */
   volumePc: number;
   /** 월간 모바일 검색량 */
@@ -63,6 +78,34 @@ export interface YouTubeVideoLite {
   isShort: boolean;
 }
 
+export interface ReasonCategory {
+  key: string;
+  label: string;
+  /** 카테고리 사전 단어의 총 등장 횟수 */
+  matches: number;
+  /** 해당 카테고리 단어가 하나라도 나온 문서(영상) 수 */
+  docHits: number;
+  /** 실제로 잡힌 상위 단어 */
+  topWords: string[];
+  /** 이 카테고리를 언급한 문서 비율 (docHits / docCount, 0~1) */
+  share: number;
+}
+
+export interface ReasonResult {
+  /** 분석한 전체 문서 수 (YouTube 텍스트 + Instagram 캡션) */
+  docCount: number;
+  /** YouTube 제목·설명 문서 수 */
+  ytDocCount?: number;
+  /** Instagram 캡션 문서 수 */
+  igDocCount?: number;
+  totalMatches: number;
+  /** 최상위 카테고리가 최소 언급 문서 수를 넘겼는지 (표본 신뢰도) */
+  confident: boolean;
+  /** 가장 많이 언급된 카테고리 라벨 (신뢰도 미달이면 null) */
+  dominant: string | null;
+  categories: ReasonCategory[];
+}
+
 export interface YouTubeStat {
   /** 전체 매칭 영상 수(추정) = search.list pageInfo.totalResults. */
   videoCount: number;
@@ -75,6 +118,8 @@ export interface YouTubeStat {
   totalViews: number;
   avgViews: number;
   topVideo: YouTubeVideoLite | null;
+  /** 확산 이유 추정 (영상 제목·설명 텍스트마이닝). */
+  reasons?: ReasonResult | null;
   /** 조회 대상 기간(일). */
   windowDays: number;
   fetchedAt: string;

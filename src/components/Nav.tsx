@@ -3,12 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+/**
+ * IR·발표용으로 예측 파이프라인(발굴 → 검증 → 소싱)만 상단에 노출한다.
+ * 아래 보조 탭들은 라우트·코드가 그대로 살아 있고 URL 로 직접 접근 가능하다.
+ * 다시 노출하려면 HIDDEN 에서 LINKS 로 옮기면 된다.
+ */
 const LINKS = [
-  { href: "/", label: "대시보드" },
-  { href: "/keywords", label: "키워드 관리" },
-  { href: "/instagram", label: "Instagram 수집" },
-  { href: "/scorecard", label: "스코어카드" },
+  { href: "/", label: "홈" },
+  { href: "/domestic", label: "국내 트렌드" },
+  { href: "/global", label: "해외 트렌드" },
+  { href: "/radar", label: "식품 뉴스 스캔" },
+  { href: "/backtest", label: "예측 검증" },
+  { href: "/label", label: "발굴 라벨링" },
+  { href: "/odm", label: "ODM 스크리닝" },
 ];
+
+// 숨김(코드 보존 — /keywords, /instagram, /scorecard 로 직접 접근 가능):
+// { href: "/keywords", label: "키워드 관리" },
+// { href: "/instagram", label: "Instagram 수집" },
+// { href: "/scorecard", label: "스코어카드" },
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
