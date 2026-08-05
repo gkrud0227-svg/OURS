@@ -60,15 +60,29 @@ export async function GET(request: Request) {
 
   const base = new URL(request.url).origin;
   const at = new Date().toISOString();
-  const all: LogCandidate[] = [];
   const errors: string[] = [];
+  const done: string[] = [];
+  let added = 0;
+
+  // 단계별로 즉시 로그에 저장한다 — Hobby 60초에 끊겨도 완료 단계는 유지되고, 외부 스케줄러
+  // 재시도가 나머지를 이어받는다(최초 등장 dedup이라 중복 저장 없음).
+  async function flush(batch: LogCandidate[], label: string) {
+    if (!batch.length) return;
+    try {
+      const r = await appendLog(batch, at);
+      added += r.added;
+      done.push(`${label}:+${r.added}`);
+    } catch {
+      errors.push(`append:${label}`);
+    }
+  }
 
   // 1) YouTube 발굴 — 국내(KR)
   let koTerms: string[] = [];
   try {
     const kr = await discover(base, SEED_PRESETS.ko, "KR");
-    all.push(...kr);
     koTerms = kr.map((c) => c.term!).filter(Boolean);
+    await flush(kr, "KR");
   } catch {
     errors.push("discover:KR");
   }
@@ -76,7 +90,7 @@ export async function GET(request: Request) {
   // 1b) 해외(US·GB)
   for (const r of OVERSEAS_REGIONS) {
     try {
-      all.push(...(await discover(base, SEED_PRESETS.en, r)));
+      await flush(await discover(base, SEED_PRESETS.en, r), r);
     } catch {
       errors.push(`discover:${r}`);
     }
@@ -93,26 +107,17 @@ export async function GET(request: Request) {
       });
       if (acRes.ok) {
         const acJson = (await acRes.json()) as { candidates?: Array<{ term: string }> };
-        for (const c of acJson.candidates ?? []) {
-          all.push({ term: c.term, source: "search", novel: false });
-        }
+        const cands: LogCandidate[] = (acJson.candidates ?? []).map((c) => ({
+          term: c.term,
+          source: "search",
+          novel: false,
+        }));
+        await flush(cands, "ac");
       }
     } catch {
       errors.push("autocomplete");
     }
   }
 
-  // 3) 최초 등장 후보만 로그에 append
-  let added = 0;
-  let total = 0;
-  try {
-    ({ added, total } = await appendLog(all, at));
-  } catch (e) {
-    return NextResponse.json(
-      { error: "로그 저장 실패", detail: e instanceof Error ? e.message : String(e), discovered: all.length },
-      { status: 500 },
-    );
-  }
-
-  return NextResponse.json({ ok: true, at, discovered: all.length, added, total, errors });
+  return NextResponse.json({ ok: true, at, added, done, errors });
 }
