@@ -24,30 +24,78 @@ interface RawRow {
   [k: string]: unknown;
 }
 
-async function fetchCompany(key: string, company: string): Promise<OdmCacheEntry> {
-  const rows: RawRow[] = [];
-  let total = 0;
-  for (let start = 1; start <= MAX_ROWS; start += CHUNK) {
-    const end = Math.min(start + CHUNK - 1, MAX_ROWS);
-    const url = `${BASE}/${key}/${SERVICE}/json/${start}/${end}/BSSH_NM=${encodeURIComponent(company)}`;
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), 15_000);
-    let batch: RawRow[] = [];
-    try {
-      const res = await fetch(url, { cache: "no-store", signal: ac.signal });
-      if (!res.ok) break;
-      const json = (await res.json()) as Record<string, { row?: RawRow[]; total_count?: string | number }>;
-      const env = json?.[SERVICE];
-      batch = env?.row ?? [];
-      total = Number(env?.total_count ?? 0) || total;
-    } catch {
-      break;
-    } finally {
-      clearTimeout(timer);
-    }
-    rows.push(...batch);
-    if (batch.length < end - start + 1 || rows.length >= total) break;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** 식약처 한 페이지(start~end) 1회 조회. */
+async function fetchPageOnce(
+  key: string,
+  company: string,
+  start: number,
+  end: number,
+): Promise<{ rows: RawRow[]; total: number; ok: boolean }> {
+  const url = `${BASE}/${key}/${SERVICE}/json/${start}/${end}/BSSH_NM=${encodeURIComponent(company)}`;
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 12_000);
+  try {
+    const res = await fetch(url, { cache: "no-store", signal: ac.signal });
+    if (!res.ok) return { rows: [], total: 0, ok: false };
+    const json = (await res.json()) as Record<
+      string,
+      { row?: RawRow[]; total_count?: string | number; RESULT?: { CODE?: string } }
+    >;
+    const env = json?.[SERVICE];
+    const code = env?.RESULT?.CODE ?? "";
+    // INFO-200 = 해당 구간 데이터 없음(정상 끝). 그 외 코드는 일시 오류로 보고 재시도 대상.
+    const ok = !code || code.startsWith("INFO-000") || code.startsWith("INFO-200");
+    return { rows: env?.row ?? [], total: Number(env?.total_count ?? 0) || 0, ok };
+  } catch {
+    return { rows: [], total: 0, ok: false };
+  } finally {
+    clearTimeout(timer);
   }
+}
+
+/** 빈/오류 응답이면 재시도(식약처 일시 rate-limit 대응). */
+async function fetchPage(
+  key: string,
+  company: string,
+  start: number,
+  end: number,
+): Promise<{ rows: RawRow[]; total: number }> {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const r = await fetchPageOnce(key, company, start, end);
+    if (r.ok && (r.rows.length > 0 || r.total === 0)) return { rows: r.rows, total: r.total };
+    await sleep(400 * (attempt + 1)); // 점증 backoff
+  }
+  return { rows: [], total: 0 };
+}
+
+/** 동시 요청 수 제한 — 식약처가 과도한 병렬을 rate-limit(빈 응답)하므로 소량만 병렬. */
+const PAGE_CONCURRENCY = 3;
+
+async function fetchCompany(key: string, company: string): Promise<OdmCacheEntry> {
+  // 1) 첫 페이지로 전체 건수(total) 파악.
+  const first = await fetchPage(key, company, 1, CHUNK);
+  const total = first.total || first.rows.length;
+  const cap = Math.min(total, MAX_ROWS);
+  const rows: RawRow[] = [...first.rows];
+
+  // 2) 나머지 페이지를 **동시 4개씩** 받는다 — 순차보다 빠르고(60초 대응),
+  //    전부 병렬(30+개)이면 식약처가 rate-limit해서 데이터가 비니 소량 병렬로 균형.
+  const ranges: Array<[number, number]> = [];
+  for (let start = CHUNK + 1; start <= cap; start += CHUNK) {
+    ranges.push([start, Math.min(start + CHUNK - 1, cap)]);
+  }
+  let idx = 0;
+  async function worker() {
+    while (idx < ranges.length) {
+      const [s, e] = ranges[idx++];
+      const p = await fetchPage(key, company, s, e);
+      rows.push(...p.rows);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(PAGE_CONCURRENCY, ranges.length) }, worker));
+
   const companies = [...new Set(rows.map((x) => (x.BSSH_NM ?? "").trim()).filter(Boolean))];
   return { total: total || rows.length, rows, companies, fetchedAt: new Date().toISOString() };
 }
