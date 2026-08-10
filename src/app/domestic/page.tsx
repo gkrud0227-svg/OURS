@@ -6,6 +6,7 @@ import { guessFoodType } from "@/lib/odm";
 import { useStore } from "@/lib/store-context";
 import { shopGrade, SHOP_META, type ShoppingTrend } from "@/lib/shopping";
 import { trendFromWeeks, gateByLevel, STATUS_META, type TrendStatus } from "@/lib/trend";
+import { MIN_DOC_HITS } from "@/lib/reasons";
 import type { WeekPoint } from "@/lib/types";
 import { estimateUnits, quotaLine, addQuota } from "@/lib/quota";
 import { QuotaBadge } from "@/components/QuotaBadge";
@@ -44,6 +45,34 @@ function verdictOf(r: Row): Verdict {
   if (rising) return "searchOnly";
   if (r.novel && !r.hasSearch) return "contentLead";
   return "contentOnly";
+}
+
+/**
+ * 결합 발굴 점수 — 순위 정렬 기준(0~1 근사).
+ *
+ * 검색상승률만으로 줄 세우면 "검색은 급등했지만 유튜브 영상이 3개도 안 되는" 후보가
+ * 근거 없이 1위가 된다(이유 추정도 불가). 그래서:
+ *   1) 검색상승률을 **주축**으로 두고(백테스트상 검색이 콘텐츠보다 예측력 높음),
+ *   2) 콘텐츠 lift는 **검색이 함께 오를 때만** 교차검증 가산으로 쓰고,
+ *   3) 삼중/이중 확인일수록 가산(검색·콘텐츠·쇼핑이 서로 뒷받침),
+ *   4) 검색만 오르고 영상이 MIN_DOC_HITS 미만이면 스파이크로 보고 **감쇠**한다.
+ * 검색 미상승(콘텐츠 단독)은 조기신호로 안 쓰므로 하단으로 보낸다.
+ */
+function rankScore(r: Row): number {
+  const rising = r.searchStatus === "surge" || r.searchStatus === "up";
+  const searchNorm = r.searchRise === null ? 0 : Math.max(0, Math.min(1, (r.searchRise + 20) / 70));
+  const liftNorm = r.lift ? Math.max(0, Math.min(1, (r.lift - 1) / 9)) : 0;
+  const df = r.dfRecent ?? 0;
+
+  const v = verdictOf(r);
+  const corroboration =
+    v === "triple" ? 0.25 : v === "double" ? 0.15 : v === "searchOnly" ? 0 : -0.3;
+
+  // 근거 가드 — 검색은 오르는데 영상이 3개 미만이면 얇은 스파이크로 보고 감쇠.
+  const thinPenalty = rising && df < MIN_DOC_HITS ? -0.12 * (1 - df / MIN_DOC_HITS) : 0;
+
+  // 콘텐츠 lift는 검색이 오를 때만 가산(교차검증). 검색 미상승 콘텐츠 단독엔 안 씀.
+  return 0.62 * searchNorm + (rising ? 0.18 * liftNorm : 0) + corroboration + thinPenalty;
 }
 
 /**
@@ -124,8 +153,9 @@ export default function DomesticPage() {
   const [error, setError] = useState<string | null>(null);
 
   // store.candidates(대시보드와 동일 데이터)를 국내 트렌드 표 모양(Row)으로 변환.
-  // 홈과 동일하게 **상승률(riseRate) 내림차순**으로 정렬한다. 상승률이 없는(검색 미상승)
-  // 후보는 맨 아래로, **비식품 판정 후보는 그보다 더 아래로** 보낸다.
+  // **결합 발굴 점수(rankScore) 내림차순**으로 정렬한다 — 검색상승을 주축으로 콘텐츠 lift·
+  // 교차검증을 가산하고, 영상 근거가 얇은 검색-단독 스파이크는 감쇠한다. 동점이면 검색상승률로
+  // 가른다. 비식품 판정 후보는 맨 아래로 보낸다.
   const rows = useMemo<Row[]>(() => {
     const nf = (r: Row) => (r.contextTag === "nonfood" ? 1 : 0);
     return candidates
@@ -146,7 +176,10 @@ export default function DomesticPage() {
         };
       })
       .sort(
-        (a, b) => nf(a) - nf(b) || (b.searchRise ?? -Infinity) - (a.searchRise ?? -Infinity),
+        (a, b) =>
+          nf(a) - nf(b) ||
+          rankScore(b) - rankScore(a) ||
+          (b.searchRise ?? -Infinity) - (a.searchRise ?? -Infinity),
       );
   }, [candidates]);
 
