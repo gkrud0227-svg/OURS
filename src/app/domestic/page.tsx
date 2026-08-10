@@ -10,6 +10,7 @@ import { MIN_DOC_HITS } from "@/lib/reasons";
 import type { WeekPoint } from "@/lib/types";
 import { estimateUnits, quotaLine, addQuota } from "@/lib/quota";
 import { QuotaBadge } from "@/components/QuotaBadge";
+import { FlowPanel } from "@/components/FlowPanel";
 
 /** 이 후보를 떠올린 발굴 소스. */
 type Source = "youtube" | "search" | "both";
@@ -148,7 +149,7 @@ export default function DomesticPage() {
   // 발굴은 store 한 곳(candidates)에 담긴다 → 대시보드와 국내 발굴이 같은 데이터를 공유하고,
   // localStorage 에 영속되므로 탭 이동·새로고침에도 유지된다.
   // 단, 이 탭은 **국내(KR)만** 발굴한다(scope="domestic"). 해외는 해외 트렌드 탭, 홈은 국내+해외.
-  const { candidates, discovering, lastDiscoveryAt, runDiscovery, seeds } = useStore();
+  const { candidates, flow, discovering, lastDiscoveryAt, runDiscovery, seeds } = useStore();
   const [seedText, setSeedText] = useState(seeds.join(", "));
   const [error, setError] = useState<string | null>(null);
 
@@ -272,6 +273,7 @@ export default function DomesticPage() {
         )
       ) : (
         <>
+          <FlowPanel flow={flow} />
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Kpi label="이중 확인 후보" value={String(doubleCount)} sub="콘텐츠 신조어 + 검색 상승" emphasis />
             <Kpi label="발굴 후보" value={String(rows.length)} sub="유튜브 + 검색 자동완성 합산" />

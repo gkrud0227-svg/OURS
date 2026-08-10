@@ -8,7 +8,16 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { Candidate, Category, DiscoverySource, Keyword, Scorecard, WeekPoint } from "./types";
+import type {
+  Candidate,
+  Category,
+  DiscoverySource,
+  Keyword,
+  ReasonResult,
+  Scorecard,
+  WeekPoint,
+} from "./types";
+import { analyzeReasons } from "./reasons";
 import { seedKeywords } from "./defaults";
 import { fetchDataLab, type DataLabResult } from "./datalab";
 import { fetchInstagram, fetchYouTube } from "./social";
@@ -80,6 +89,7 @@ const LU_KEY = "td.lastUpdated.v1";
 // v2: 대시보드·국내 발굴 시드를 8개 공통 세트로 통일(재시드 위해 키 버전 업).
 const SEEDS_KEY = "td.seeds.v2";
 const CAND_KEY = "td.candidates.v1";
+const FLOW_KEY = "td.flow.v1";
 const LD_KEY = "td.lastDiscovery.v1";
 // v4: 조합 테마어까지 빼고 완전 중립 발굴 의도어로 교체하며 버전업.
 const OSEEDS_KEY = "td.overseasSeeds.v4";
@@ -113,6 +123,8 @@ interface StoreValue {
   seeds: string[];
   setSeeds: (seeds: string[]) => void;
   candidates: Candidate[];
+  /** SNS 확산 흐름 — 국내 발굴 텍스트에서 집계한 확산 이유(테마) 분포. */
+  flow: ReasonResult | null;
   discovering: boolean;
   lastDiscoveryAt: string | null;
   runDiscovery: (
@@ -142,6 +154,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [refreshing, setRefreshing] = useState(false);
   const [seeds, setSeeds] = useState<string[]>(DEFAULT_SEEDS);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [flow, setFlow] = useState<ReasonResult | null>(null);
   const [discovering, setDiscovering] = useState(false);
   const [lastDiscoveryAt, setLastDiscoveryAt] = useState<string | null>(null);
   const [overseasSeeds, setOverseasSeeds] = useState<string[]>(DEFAULT_OVERSEAS_SEEDS);
@@ -198,11 +211,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           if (localOSeeds) setOverseasSeeds(localOSeeds);
         }
 
-        // candidates / 마지막 발굴시각 — localStorage 유지(발굴 결과 캐시).
+        // candidates / 흐름 / 마지막 발굴시각 — localStorage 유지(발굴 결과 캐시).
         const rawCand = localStorage.getItem(CAND_KEY);
         const rawLd = localStorage.getItem(LD_KEY);
         if (rawCand) setCandidates(JSON.parse(rawCand) as Candidate[]);
         if (rawLd) setLastDiscoveryAt(rawLd);
+        const rawFlow = localStorage.getItem(FLOW_KEY);
+        if (rawFlow) setFlow(JSON.parse(rawFlow) as ReasonResult);
         const rawOCand = localStorage.getItem(OCAND_KEY);
         if (rawOCand) setOverseasCandidates(JSON.parse(rawOCand) as DiscoverCandidate[]);
       } catch {
@@ -240,6 +255,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hydrated) localStorage.setItem(CAND_KEY, JSON.stringify(candidates));
   }, [candidates, hydrated]);
+  useEffect(() => {
+    if (hydrated && flow) localStorage.setItem(FLOW_KEY, JSON.stringify(flow));
+  }, [flow, hydrated]);
   useEffect(() => {
     if (hydrated && lastDiscoveryAt) localStorage.setItem(LD_KEY, lastDiscoveryAt);
   }, [lastDiscoveryAt, hydrated]);
@@ -477,6 +495,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       // ① 유튜브 콘텐츠 신조어(단일 토큰).
       const disc = krSettled?.status === "fulfilled" ? krSettled.value : null;
+
+      // SNS 확산 흐름 — 발굴된 모든 후보의 예시 영상 제목을 모아 확산 이유(테마)를 집계한다.
+      // 개별 제품이 아니라 "지금 어떤 이유(맛·식감·희소성·비주얼·계절)로 퍼지는지"의 큰 흐름.
+      // 추가 API 호출 없음: examples 는 이미 발굴 응답에 들어 있다.
+      if (disc) {
+        const flowTexts = disc.candidates.flatMap((c) => c.examples ?? []);
+        if (flowTexts.length) setFlow(analyzeReasons(flowTexts, "ko"));
+      }
+
       const yt = disc
         ? disc.candidates
             .filter((c) => !c.term.includes(" "))
@@ -685,6 +712,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       seeds,
       setSeeds,
       candidates,
+      flow,
       discovering,
       lastDiscoveryAt,
       runDiscovery,
@@ -711,6 +739,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       refreshInstagram,
       seeds,
       candidates,
+      flow,
       discovering,
       lastDiscoveryAt,
       runDiscovery,
