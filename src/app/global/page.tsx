@@ -14,11 +14,10 @@ import { localeForRegion } from "@/lib/lang";
 import { fetchReddit, type RedditResult } from "@/lib/reddit";
 import { MIN_DOC_HITS } from "@/lib/reasons";
 import { formatCount } from "@/lib/format";
+import { estimateUnits, quotaLine, addQuota } from "@/lib/quota";
+import { QuotaBadge } from "@/components/QuotaBadge";
 
 type Mode = "discover" | "analyze";
-
-/** 발굴 1회 시드당 유튜브 검색 쿼터 추정 — 최근 2페이지 + 기준선 3페이지 × 100 units. */
-const YT_UNITS_PER_SEED = 500;
 
 export default function GlobalPage() {
   const [mode, setMode] = useState<Mode>("discover");
@@ -74,13 +73,14 @@ export default function GlobalPage() {
     e.preventDefault();
     const seeds = seedText.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 4);
     if (!seeds.length) return;
+    const estimate = estimateUnits(0, seeds.length);
     const okToRun = window.confirm(
       `키워드 발굴은 유튜브 API 쿼터를 씁니다.\n` +
         `시드 ${seeds.length}개를 각각 조회합니다.\n` +
-        `시드당 약 ${YT_UNITS_PER_SEED} units, 총 약 ${seeds.length * YT_UNITS_PER_SEED} units.\n` +
-        `기본 쿼터는 하루 10,000 units입니다. 진행할까요?`,
+        `${quotaLine(estimate)}\n진행할까요?`,
     );
     if (!okToRun) return;
+    addQuota(estimate);
     setDiscovering(true);
     setDiscoverError(null);
     try {
@@ -212,6 +212,7 @@ export default function GlobalPage() {
                   </span>
                 )}
               </button>
+              <QuotaBadge />
             </div>
             <p className="mt-2.5 text-xs text-muted">
               시드당 <b className="font-semibold">최근 14일</b>의 신규 업로드와{" "}

@@ -18,6 +18,8 @@ import { guessFoodType } from "@/lib/odm";
 import { shopGrade } from "@/lib/shopping";
 import type { DiscoverCandidate } from "@/lib/global";
 import { formatCount, formatDateTime, formatPct, pctColor } from "@/lib/format";
+import { estimateUnits, quotaLine, addQuota } from "@/lib/quota";
+import { QuotaBadge } from "@/components/QuotaBadge";
 import { PatternTag, StatusBadge } from "@/components/StatusBadge";
 
 type Msg = { kind: "ok" | "error"; text: string } | null;
@@ -44,9 +46,6 @@ const VOLUME_CONFIRM_FLOOR = 100;
 
 /** 해외 발굴: 최근 이만큼 채널이 안 쓰면 표본이 작아 트렌드로 보기 어렵다(하단·배지 처리). */
 const MIN_OVERSEAS_CHANNELS = 8;
-
-/** 발굴 1회 시드당 유튜브 검색 쿼터 추정 — 최근 2페이지 + 기준선 3페이지 × 100 units. */
-const YT_UNITS_PER_SEED = 500;
 
 /**
  * 트렌드 판정 배지 — "발굴됐다" / "실제로 뜬다" / "규모 미확인"을 구분한다.
@@ -257,14 +256,14 @@ export default function DiscoveryDashboard() {
   async function onDiscover() {
     setMsg(null);
     const nRegions = OVERSEAS_REGIONS.length;
-    const total = (seeds.length + overseasSeeds.length * nRegions) * YT_UNITS_PER_SEED;
+    const estimate = estimateUnits(seeds.length, overseasSeeds.length * nRegions);
     const okToRun = window.confirm(
       `키워드 발굴은 유튜브 API 쿼터를 씁니다.\n` +
         `국내 ${seeds.length}개 + 해외 ${overseasSeeds.length}개 시드(리전 ${nRegions}곳: ${OVERSEAS_REGIONS.join("·")})를 각각 조회합니다.\n` +
-        `시드당 약 ${YT_UNITS_PER_SEED} units, 총 약 ${total} units.\n` +
-        `기본 쿼터는 하루 10,000 units입니다. 진행할까요?`,
+        `${quotaLine(estimate)}\n진행할까요?`,
     );
     if (!okToRun) return;
+    addQuota(estimate);
     const r = await runDiscovery();
     const os = r.overseas != null ? ` · 해외 ${r.overseas}개(US)` : "";
     setMsg(
@@ -356,6 +355,7 @@ export default function DiscoveryDashboard() {
               </span>
             )}
           </button>
+          <QuotaBadge />
         </div>
       </div>
 

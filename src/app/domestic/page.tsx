@@ -7,6 +7,8 @@ import { useStore } from "@/lib/store-context";
 import { shopGrade, SHOP_META, type ShoppingTrend } from "@/lib/shopping";
 import { trendFromWeeks, gateByLevel, STATUS_META, type TrendStatus } from "@/lib/trend";
 import type { WeekPoint } from "@/lib/types";
+import { estimateUnits, quotaLine, addQuota } from "@/lib/quota";
+import { QuotaBadge } from "@/components/QuotaBadge";
 
 /** 이 후보를 떠올린 발굴 소스. */
 type Source = "youtube" | "search" | "both";
@@ -31,8 +33,6 @@ interface Row {
   contextTag?: "food" | "neutral" | "nonfood";
 }
 
-/** 발굴 1회 시드당 유튜브 검색 쿼터 추정 — 최근 2페이지 + 기준선 3페이지 × 100 units. */
-const YT_UNITS_PER_SEED = 500;
 
 type Verdict = "triple" | "double" | "contentLead" | "searchOnly" | "contentOnly";
 
@@ -155,14 +155,14 @@ export default function DomesticPage() {
     const list = seedText.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 8);
     if (!list.length) return;
     // 국내 트렌드 탭은 **국내(KR)만** 발굴한다. (해외는 해외 트렌드 탭에서, 홈은 국내+해외)
-    const total = list.length * YT_UNITS_PER_SEED;
+    const estimate = estimateUnits(list.length, 0);
     const okToRun = window.confirm(
       `키워드 발굴은 유튜브 API 쿼터를 씁니다.\n` +
         `국내 시드 ${list.length}개를 각각 조회합니다. (해외는 해외 트렌드 탭에서)\n` +
-        `시드당 약 ${YT_UNITS_PER_SEED} units, 총 약 ${total} units.\n` +
-        `기본 쿼터는 하루 10,000 units입니다. 진행할까요?`,
+        `${quotaLine(estimate)}\n진행할까요?`,
     );
     if (!okToRun) return;
+    addQuota(estimate);
     setError(null);
     const r = await runDiscovery(list, "domestic");
     if (r.error) setError(r.error);
@@ -215,6 +215,7 @@ export default function DomesticPage() {
               </span>
             )}
           </button>
+          <QuotaBadge />
         </div>
         <p className="mt-2.5 text-xs text-muted">
           시드엔 <b className="font-semibold">의도어</b>(신상·유행·신제품)를 붙이세요. 그래야 최신 업로드가
