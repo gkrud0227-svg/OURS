@@ -26,7 +26,7 @@ export function QuotaBadge() {
 
   if (!q) return null;
 
-  const pct = Math.round((q.remaining / DAILY_QUOTA) * 100);
+  const remainPct = Math.round((q.remaining / DAILY_QUOTA) * 100);
   const color = q.remaining < 2000 ? "#dc2626" : q.remaining < 5000 ? "#d97706" : "#16a34a";
 
   return (
@@ -46,9 +46,20 @@ export function QuotaBadge() {
       }}
     >
       <span aria-hidden>▮</span>
-      YouTube 쿼터 잔여{" "}
-      <b style={{ color, fontVariantNumeric: "tabular-nums" }}>{q.remaining.toLocaleString()}</b>
-      <span style={{ color: "#9ca3af" }}>/ {DAILY_QUOTA.toLocaleString()} ({pct}%)</span>
+      YouTube 쿼터{" "}
+      <span style={{ color: "#9ca3af" }}>
+        오늘 사용{" "}
+        <b style={{ color: "#374151", fontVariantNumeric: "tabular-nums" }}>
+          {q.spent.toLocaleString()}
+        </b>
+      </span>
+      <span style={{ color: "#d1d5db" }}>·</span>
+      <span style={{ color: "#9ca3af" }}>
+        잔여{" "}
+        <b style={{ color, fontVariantNumeric: "tabular-nums" }}>{q.remaining.toLocaleString()}</b>{" "}
+        ({remainPct}%)
+      </span>
+      <span style={{ color: "#d1d5db" }}>/ {DAILY_QUOTA.toLocaleString()}</span>
     </span>
   );
 }
