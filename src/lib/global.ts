@@ -94,6 +94,8 @@ export interface DiscoverResult {
   quotaUnits: number;
   ytError?: string;
   candidates: DiscoverCandidate[];
+  /** SNS 확산 흐름 — 최근 영상 제목·설명 전체에서 집계한 확산 이유(테마) 분포. */
+  flow?: ReasonResult;
 }
 
 async function post<T>(url: string, body: unknown, fallback: string): Promise<T> {

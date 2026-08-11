@@ -17,7 +17,6 @@ import type {
   Scorecard,
   WeekPoint,
 } from "./types";
-import { analyzeReasons } from "./reasons";
 import { seedKeywords } from "./defaults";
 import { fetchDataLab, type DataLabResult } from "./datalab";
 import { fetchInstagram, fetchYouTube } from "./social";
@@ -496,13 +495,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // ① 유튜브 콘텐츠 신조어(단일 토큰).
       const disc = krSettled?.status === "fulfilled" ? krSettled.value : null;
 
-      // SNS 확산 흐름 — 발굴된 모든 후보의 예시 영상 제목을 모아 확산 이유(테마)를 집계한다.
+      // SNS 확산 흐름 — 서버가 최근 영상 전체(제목+설명)로 집계한 확산 이유(테마) 분포.
       // 개별 제품이 아니라 "지금 어떤 이유(맛·식감·희소성·비주얼·계절)로 퍼지는지"의 큰 흐름.
-      // 추가 API 호출 없음: examples 는 이미 발굴 응답에 들어 있다.
-      if (disc) {
-        const flowTexts = disc.candidates.flatMap((c) => c.examples ?? []);
-        if (flowTexts.length) setFlow(analyzeReasons(flowTexts, "ko"));
-      }
+      if (disc?.flow) setFlow(disc.flow);
 
       const yt = disc
         ? disc.candidates

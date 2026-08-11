@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { docTerms, seedTokenSet } from "@/lib/cooccurrence";
 import { localeForRegion, localePredicate } from "@/lib/lang";
 import { contextOf, contextTagOf, CONTEXT_RANK } from "@/lib/food-context";
+import { analyzeReasons, type ReasonLocale } from "@/lib/reasons";
 
 const SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 const VIDEOS_URL = "https://www.googleapis.com/youtube/v3/videos";
@@ -565,6 +566,11 @@ export async function POST(request: Request) {
     foodShare: c.foodShare,
   }));
 
+  // SNS 확산 흐름 — 후보별 예시 2건이 아니라 **최근 영상 전체**(제목 + 설명 앞부분)로
+  // 확산 이유(테마)를 집계한다. 표본이 두꺼워져 테마별 근거 영상 수가 실제 규모를 반영한다.
+  const flowTexts = R.map((d) => `${d.title} ${(d.desc ?? "").slice(0, 200)}`);
+  const flow = flowTexts.length ? analyzeReasons(flowTexts, locale as ReasonLocale) : undefined;
+
   return NextResponse.json({
     region,
     locale,
@@ -581,5 +587,6 @@ export async function POST(request: Request) {
     quotaUnits: units,
     ytError: errors.length ? errors.join(" / ") : undefined,
     candidates,
+    flow,
   });
 }
