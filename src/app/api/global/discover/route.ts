@@ -77,6 +77,8 @@ const REGION_LANG: Record<string, string> = {
 };
 
 interface Doc {
+  /** 영상 ID — 시드 간 같은 영상 중복 집계를 막는 데 쓴다. */
+  id: string;
   /**
    * 후보 용어는 **제목 + 설명란 앞부분**에서 뽑는다.
    *
@@ -157,6 +159,7 @@ async function hydrate(key: string, ids: string[]): Promise<Doc[]> {
   if (!res.ok) throw new Error(`videos ${res.status}`);
   const json = (await res.json()) as { items?: VideoItem[] };
   return (json.items ?? []).map((v) => ({
+    id: v.id ?? "",
     title: v.snippet?.title ?? "",
     desc: v.snippet?.description ?? "",
     text: `${v.snippet?.title ?? ""} ${v.snippet?.description ?? ""}`,
@@ -568,7 +571,16 @@ export async function POST(request: Request) {
 
   // SNS 확산 흐름 — 후보별 예시 2건이 아니라 **최근 영상 전체**(제목 + 설명 앞부분)로
   // 확산 이유(테마)를 집계한다. 표본이 두꺼워져 테마별 근거 영상 수가 실제 규모를 반영한다.
-  const flowTexts = R.map((d) => `${d.title} ${(d.desc ?? "").slice(0, 200)}`);
+  // 시드 간 같은 영상이 겹치면 고유 영상 1건으로만 세도록 ID 기준 중복 제거(ID 없으면
+  // 제목+채널로 폴백)한다 — "근거 영상 수"가 고유 영상 수를 정확히 반영하게.
+  const seenFlow = new Set<string>();
+  const flowTexts: string[] = [];
+  for (const d of R) {
+    const key = d.id || `${d.title} ${d.channelId}`;
+    if (seenFlow.has(key)) continue;
+    seenFlow.add(key);
+    flowTexts.push(`${d.title} ${(d.desc ?? "").slice(0, 200)}`);
+  }
   const flow = flowTexts.length ? analyzeReasons(flowTexts, locale as ReasonLocale) : undefined;
 
   return NextResponse.json({
