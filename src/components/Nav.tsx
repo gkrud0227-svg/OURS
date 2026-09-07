@@ -13,15 +13,16 @@ const LINKS = [
   { href: "/", label: "홈" },
   { href: "/domestic", label: "국내 트렌드" },
   { href: "/global", label: "해외 트렌드" },
-  { href: "/backtest", label: "예측 검증" },
   { href: "/label", label: "발굴 라벨링" },
   { href: "/odm", label: "제조처 스크리닝" },
 ];
 
-// 숨김(코드 보존 — /radar, /keywords, /instagram, /scorecard 로 직접 접근 가능):
+// 숨김(코드 보존 — /radar, /backtest, /keywords, /instagram, /scorecard 로 직접 접근 가능):
 // { href: "/radar", label: "식품 뉴스 스캔" },
 //   ⚠️ 라우트는 살아 있어야 한다. 해외 트렌드 랭킹이 같은 소스(/api/food-news)를
 //      내부적으로 불러 "뉴스" 배지 후보를 만든다. 탭만 감춘 것이다.
+// { href: "/backtest", label: "예측 검증" },
+//   경영진 설득용 근거 화면이라 자료를 만들 때 /backtest 로 직접 열어 쓴다.
 // { href: "/keywords", label: "키워드 관리" },
 // { href: "/instagram", label: "Instagram 수집" },
 // { href: "/scorecard", label: "스코어카드" },

@@ -169,6 +169,18 @@ interface StoreValue {
   overseasCandidates: DiscoverCandidate[];
 }
 
+/**
+ * 발굴 결과 묶음 — Supabase app_state 의 'discovery' key 에 통째로 들어간다.
+ * 발굴 한 번에 함께 만들어지는 값이라 함께 저장하고 함께 복원한다.
+ */
+interface DiscoveryState {
+  candidates: Candidate[];
+  overseasCandidates: DiscoverCandidate[];
+  flow: CoFlowResult | null;
+  keywordReasons: KeywordReason[] | null;
+  lastDiscoveryAt: string | null;
+}
+
 const StoreContext = createContext<StoreValue | null>(null);
 
 const nowIso = () => new Date().toISOString();
@@ -179,6 +191,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [watchlistPersisted, setWatchlistPersisted] = useState(false);
   /** 시드(국내·해외)를 Supabase 에 저장 중인가. false 면 localStorage 만. */
   const [seedsPersisted, setSeedsPersisted] = useState(false);
+  /** 발굴 결과를 Supabase 에 저장 중인가. false 면 localStorage 만(그 브라우저에서만 보인다). */
+  const [discoveryPersisted, setDiscoveryPersisted] = useState(false);
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [scorecards, setScorecards] = useState<Scorecard[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -192,6 +206,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [lastDiscoveryAt, setLastDiscoveryAt] = useState<string | null>(null);
   const [overseasSeeds, setOverseasSeeds] = useState<string[]>(DEFAULT_OVERSEAS_SEEDS);
   const [overseasCandidates, setOverseasCandidates] = useState<DiscoverCandidate[]>([]);
+
+  const applyDiscovery = useCallback((d: DiscoveryState) => {
+    setCandidates(d.candidates ?? []);
+    setOverseasCandidates(d.overseasCandidates ?? []);
+    setFlow(d.flow ?? null);
+    setKeywordReasons(d.keywordReasons ?? null);
+    setLastDiscoveryAt(d.lastDiscoveryAt ?? null);
+  }, []);
 
   // 최초 마운트 시 로드. watchlist(저장한 후보)는 Supabase 우선, 나머지는 localStorage.
   useEffect(() => {
@@ -244,24 +266,37 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           if (localOSeeds) setOverseasSeeds(localOSeeds);
         }
 
-        // candidates / 흐름 / 마지막 발굴시각 — localStorage 유지(발굴 결과 캐시).
+        // 발굴 결과(국내·해외 후보 · 흐름 · 근거 · 마지막 발굴시각).
+        // ⚠️ 예전엔 localStorage 에만 뒀는데, 그러면 **발굴한 그 브라우저에서만** 보인다.
+        //    다른 PC 로 링크를 열면 빈 화면이라 공유가 안 됐다. Supabase 우선으로 바꾸고
+        //    localStorage 는 오프라인 캐시로 남긴다(기존 값은 아래에서 자동 이관).
         const rawCand = localStorage.getItem(CAND_KEY);
         const rawLd = localStorage.getItem(LD_KEY);
-        if (rawCand) setCandidates(JSON.parse(rawCand) as Candidate[]);
-        if (rawLd) setLastDiscoveryAt(rawLd);
         const rawFlow = localStorage.getItem(FLOW_KEY);
-        if (rawFlow) setFlow(JSON.parse(rawFlow) as CoFlowResult);
         const rawKReason = localStorage.getItem(KREASON_KEY);
-        if (rawKReason) setKeywordReasons(JSON.parse(rawKReason) as KeywordReason[]);
         const rawOCand = localStorage.getItem(OCAND_KEY);
-        if (rawOCand) setOverseasCandidates(JSON.parse(rawOCand) as DiscoverCandidate[]);
+        const local: DiscoveryState = {
+          candidates: rawCand ? (JSON.parse(rawCand) as Candidate[]) : [],
+          overseasCandidates: rawOCand ? (JSON.parse(rawOCand) as DiscoverCandidate[]) : [],
+          flow: rawFlow ? (JSON.parse(rawFlow) as CoFlowResult) : null,
+          keywordReasons: rawKReason ? (JSON.parse(rawKReason) as KeywordReason[]) : null,
+          lastDiscoveryAt: rawLd ?? null,
+        };
+        try {
+          const rd = await fetchState<DiscoveryState>("discovery");
+          if (rd.persisted) setDiscoveryPersisted(true);
+          // 서버에 발굴 이력이 있으면 그걸 쓴다. 없으면 로컬을 쓰고, 저장 effect 가 올린다.
+          applyDiscovery(rd.persisted && rd.data?.lastDiscoveryAt ? rd.data : local);
+        } catch {
+          applyDiscovery(local);
+        }
       } catch {
         setLastUpdated(nowIso());
       } finally {
         setHydrated(true);
       }
     })();
-  }, []);
+  }, [applyDiscovery]); // applyDiscovery 는 useCallback([]) 이라 안정적 — 여전히 마운트 시 1회
 
   // 변경 시 localStorage(오프라인 캐시) + Supabase(영속, 디바운스)에 반영.
   useEffect(() => {
@@ -287,19 +322,39 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const t = setTimeout(() => void saveState("seeds", seeds), 800);
     return () => clearTimeout(t);
   }, [seeds, hydrated, seedsPersisted]);
+  // 발굴 결과 — localStorage(오프라인 캐시) + Supabase(공유·영속).
+  // ⚠️ 다섯 조각을 한 번에 저장한다. 조각별로 나누면 발굴 한 번에 쓰기가 다섯 번 나가고,
+  //    중간에 실패하면 "후보는 새 건데 흐름은 옛것"인 상태가 남는다.
   useEffect(() => {
-    if (hydrated) localStorage.setItem(CAND_KEY, JSON.stringify(candidates));
-  }, [candidates, hydrated]);
-  useEffect(() => {
-    if (hydrated && flow) localStorage.setItem(FLOW_KEY, JSON.stringify(flow));
-  }, [flow, hydrated]);
-  useEffect(() => {
-    if (hydrated && keywordReasons)
-      localStorage.setItem(KREASON_KEY, JSON.stringify(keywordReasons));
-  }, [keywordReasons, hydrated]);
-  useEffect(() => {
-    if (hydrated && lastDiscoveryAt) localStorage.setItem(LD_KEY, lastDiscoveryAt);
-  }, [lastDiscoveryAt, hydrated]);
+    if (!hydrated) return;
+    localStorage.setItem(CAND_KEY, JSON.stringify(candidates));
+    localStorage.setItem(OCAND_KEY, JSON.stringify(overseasCandidates));
+    if (flow) localStorage.setItem(FLOW_KEY, JSON.stringify(flow));
+    if (keywordReasons) localStorage.setItem(KREASON_KEY, JSON.stringify(keywordReasons));
+    if (lastDiscoveryAt) localStorage.setItem(LD_KEY, lastDiscoveryAt);
+    if (!discoveryPersisted) return;
+    // 아직 한 번도 발굴 안 한 상태를 서버에 덮어쓰지 않는다.
+    if (!lastDiscoveryAt && !candidates.length && !overseasCandidates.length) return;
+    // 근거 조회 등으로 잦게 바뀌므로 800ms 디바운스 — 마지막 상태만 저장.
+    const t = setTimeout(() => {
+      void saveState("discovery", {
+        candidates,
+        overseasCandidates,
+        flow,
+        keywordReasons,
+        lastDiscoveryAt,
+      } satisfies DiscoveryState);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [
+    candidates,
+    overseasCandidates,
+    flow,
+    keywordReasons,
+    lastDiscoveryAt,
+    hydrated,
+    discoveryPersisted,
+  ]);
   useEffect(() => {
     if (!hydrated) return;
     localStorage.setItem(OSEEDS_KEY, JSON.stringify(overseasSeeds));
@@ -307,9 +362,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const t = setTimeout(() => void saveState("overseas_seeds", overseasSeeds), 800);
     return () => clearTimeout(t);
   }, [overseasSeeds, hydrated, seedsPersisted]);
-  useEffect(() => {
-    if (hydrated) localStorage.setItem(OCAND_KEY, JSON.stringify(overseasCandidates));
-  }, [overseasCandidates, hydrated]);
 
   const addKeyword = useCallback(
     (name: string, category: Category) => {

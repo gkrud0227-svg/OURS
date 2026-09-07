@@ -8,9 +8,14 @@ import { isSupabaseConfigured } from "@/lib/supabase";
  *  - PUT {key, data}       : 저장(교체).
  *
  * key 는 화이트리스트로 제한(임의 쓰기 방지).
+ *
+ * 'discovery' 는 발굴 결과 묶음(국내·해외 후보 · 확산 흐름 · 근거 · 마지막 발굴시각).
+ * ⚠️ 다섯 조각을 한 key 에 함께 둔다. 발굴 한 번에 같이 쓰이고 같이 읽히는 값이라
+ *    나누면 쓰기만 다섯 배가 되고, 조각끼리 시점이 어긋나 "후보는 새 건데 흐름은 옛것"
+ *    같은 상태가 생긴다.
  */
 
-const ALLOWED = new Set(["seeds", "overseas_seeds"]);
+const ALLOWED = new Set(["seeds", "overseas_seeds", "discovery"]);
 
 export async function GET(request: Request) {
   const key = new URL(request.url).searchParams.get("key") ?? "";
