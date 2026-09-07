@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { readOdmCacheEntry } from "@/lib/odm-cache-store";
+import { KNOWN_PARTNERS } from "@/lib/odm";
+import { readOdmCacheEntry, readOdmCacheMap } from "@/lib/odm-cache-store";
 
 /**
  * 식품안전나라 "식품(첨가물)품목제조보고" 오픈API 프록시 (서비스 I1250).
  *
  * 국내 식품 제조사는 품목마다 제조보고를 의무 제출한다. 그 이력을 보면
- * **그 ODM사가 어떤 카테고리를 만들어본 적이 있는지**를 전화 전에 알 수 있다.
+ * **그 제조처가 어떤 카테고리를 만들어본 적이 있는지**를 전화 전에 알 수 있다.
  *
  * 요청 형식 (필터는 경로 세그먼트로 붙인다):
  *   http://openapi.foodsafetykorea.go.kr/api/{key}/I1250/json/{start}/{end}/BSSH_NM=업체명
@@ -87,6 +88,12 @@ export async function POST(request: Request) {
     page?: number;
     /** 한 번에 많이 받아 클라이언트에서 거를 때 쓴다(업체별 카탈로그 조회). 최대 1000. */
     maxRows?: number;
+    /**
+     * 거래처 전체를 대상으로 제품명·식품유형을 검색한다(서버에서 캐시를 훑어 매칭만 반환).
+     * 예전에는 클라이언트가 거래처마다 카탈로그(업체당 최대 5,000행)를 통째로 받아 걸렀는데,
+     * 거래처가 63곳으로 늘면서 브라우저가 감당할 양이 아니게 됐다.
+     */
+    partnerSearch?: boolean;
   };
   try {
     body = await request.json();
@@ -102,6 +109,46 @@ export async function POST(request: Request) {
       { error: "업체명·식품유형·제품명 중 하나는 입력해야 합니다." },
       { status: 400 },
     );
+  }
+
+  /**
+   * 거래처 전체 검색 — **서버에서** 캐시를 훑어 매칭만 돌려준다.
+   *
+   * 식약처는 제품명·유형 단독 조회를 막아서, 업체별 카탈로그를 받아 걸러야 한다.
+   * 그 거르기를 클라이언트에서 하면 거래처 수 × 카탈로그 전체가 네트워크를 타므로
+   * 여기서 처리한다. 캐시는 크론이 채우며, 아직 못 받은 거래처는 응답에 알려준다.
+   */
+  if (body.partnerSearch && (product || foodType)) {
+    const kw = (product || foodType).toLowerCase();
+    const byProduct = Boolean(product);
+    const cache = await readOdmCacheMap().catch(() => ({}) as Awaited<ReturnType<typeof readOdmCacheMap>>);
+    const items: OdmItem[] = [];
+    const missing: string[] = [];
+    let oldest: string | null = null;
+    for (const partner of KNOWN_PARTNERS) {
+      const entry = cache[partner];
+      if (!entry) {
+        missing.push(partner);
+        continue;
+      }
+      if (entry.fetchedAt && (!oldest || entry.fetchedAt < oldest)) oldest = entry.fetchedAt;
+      for (const row of (entry.rows ?? []) as Row[]) {
+        const it = mapRow(row);
+        const field = byProduct ? it.product : it.foodType;
+        if (field.toLowerCase().includes(kw)) items.push(it);
+      }
+    }
+    return NextResponse.json({
+      total: items.length,
+      page: 1,
+      pageSize: items.length,
+      hasMore: false,
+      items,
+      cached: true,
+      cachedAt: oldest,
+      // 크론이 아직 못 받은 거래처 — 이 곳들은 검색 대상에서 빠졌다는 뜻이라 화면에 알린다.
+      ...(missing.length ? { missingPartners: missing } : {}),
+    });
   }
 
   const maxRows = body.maxRows ? Math.min(Math.max(1, body.maxRows), 5000) : 0;

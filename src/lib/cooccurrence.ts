@@ -33,6 +33,29 @@ const STOPWORDS = new Set([
   // 설명란 상투어 (제목 색인이 대부분 걸러내지만 제목에 붙이는 채널도 있다)
   "tags", "keywords", "hashtag", "hashtags", "disclaimer", "copyright",
   "credits", "credit", "inquiries",
+  // 요리 국적·지역 우산어 — 특정 트렌드가 아니라 넓은 범주라 발굴 상위에 뜨면 노이즈.
+  // (실측 US 발굴에서 indian 이 2위로 올라왔다)
+  "indian", "italian", "chinese", "korean", "japanese", "mexican", "thai",
+  "french", "american", "asian", "greek", "spanish", "turkish", "arabic",
+  // 조리법·형식 일반어 — 제품이 아니라 만드는 방식이나 콘텐츠 소재
+  "fry", "fried", "fryer", "airfryer", "grill", "grilled", "boiled", "steamed",
+  "testing", "tested", "trying", "eating", "review", "reviews", "ranking",
+  "hacks", "hack", "tips", "ideas", "idea", "easy", "quick", "cheap", "expensive",
+  // 콘텐츠 소재 일반어 (실측: travel·party·village·motivation 이 상위 진입)
+  "travel", "party", "village", "motivation", "vlog", "challenge", "mukbang",
+  "street", "market", "restaurant", "kitchen", "home", "homemade",
+  // 맛·반응 형용사 — 제품이 아니라 감상이다. 실측에서 delicious·funny·cute·weirdest 가
+  // 후보 상위에 올랐고, 그중 delicious 는 표기 변환까지 타고 들어가 "딸기"로 잘못 매칭됐다
+  // (골격 drgs ↔ drg). 애초에 후보가 아니어야 할 말이라 여기서 막는다.
+  "delicious", "tasty", "yummy", "weird", "weirdest", "cute", "funny", "crazy",
+  "insane", "amazing", "favorite", "favourite", "perfect", "ultimate", "real",
+  "fish", "meat", "rice", "soup", "salad",
+  // 질감·감상 형용사 — 제품이 아니라 묘사다. 실측에서 flaky·irresistible·buttery·cozy 가
+  // 후보에 올랐고, 표기 변환까지 타고 들어가 "플레이키"·"이스탄불" 로 잘못 매칭됐다.
+  "flaky", "buttery", "creamy", "crispy", "chewy", "gooey", "fluffy", "soft",
+  "juicy", "rich", "sweet", "savory", "irresistible", "cozy", "dark", "light",
+  // 사람·국적·형식어
+  "foodie", "foodies", "usa", "america", "cakedecorating", "baking",
   // 축약형 잔여 토큰 (don't → dont 등)
   "dont", "doesnt", "didnt", "isnt", "wasnt", "arent", "wont", "cant",
   "couldnt", "shouldnt", "wouldnt", "youre", "youve", "thats", "ive", "its",
@@ -148,7 +171,13 @@ const KO_PARTICLES = [
   "으로써", "으로서", "에서는", "에게서", "이라는", "라는",
   "으로", "에서", "에게", "이랑", "한테", "까지", "부터", "처럼", "보다",
   "라고", "이나", "마다", "조차", "마저", "밖에", "이란", "에는",
-  "은", "는", "이", "가", "을", "를", "의", "와", "과", "도", "만", "로", "랑",
+  // ⚠️ 주격조사 "이"는 떼지 않는다. 명사 파생접미사 "-이"(멋쟁이·개구리)와 구분이 안 돼
+  //    "멋쟁이 토마토" → "멋쟁"처럼 어간을 부수고, 그 조각이 novel=true·고lift로 상위에 올랐다.
+  //    제목은 명사구 위주라 "제품명+이" 형태는 드물어, 떼서 얻는 병합 이득보다 손해가 크다.
+  // ⚠️ "과"도 떼지 않는다. 조사 제거는 어간이 2자 이상일 때만 도는데, 그 조건이 하필
+  //    **복합 식품명만** 골라 부순다: 무화과→"무화", 군위사과→"군위사" (사과·견과는 2자라 무사).
+  //    잃는 건 접속조사("라면과"→라면)뿐인데 그런 말은 기준선에도 흔해 lift가 알아서 밀어낸다.
+  "은", "는", "가", "을", "를", "의", "와", "도", "만", "로", "랑",
 ];
 
 /** 한국어 상투어·클릭베이트·채널 boilerplate (콘텐츠 발굴 노이즈). */
@@ -217,11 +246,18 @@ const KO_STOPWORDS = new Set([
   // 격식체 문장 조각·확인/발견형 동사 잔여 (관찰된 후보: 확인했습니다·확인)
   "확인", "확인했습니다", "확인했다", "확인해", "발견", "발견했다", "발견했습니다",
   "구독", "구독과", "좋아요", "알림설정", "댓글", "영상",
+  // 2자 동사 활용형 — KO_VERB_ENDING 은 3자 이상만 보므로(라면·냉면 보호) 여기서 명시한다.
+  "갔다", "왔다", "봤다", "났다", "샀다", "줬다", "됐다", "컸다", "썼다", "쟀다",
+  // 관찰된 일반 명사·수식어 조각 (발굴 상위에 오른 비제품어)
+  "등장", "등장인물", "최애", "인물", "원작", "정체성", "느낌", "차이점",
+  // 관형형 어미(-ㄹ)로 끝나는 동사 조각. KO_VERB_ENDING 은 종결어미 위주라 "즐길 수 있는"의
+  // "즐길"을 못 잡는다. 어간을 사전 없이 판정할 수 없어 관찰·빈출형만 명시한다.
+  "즐길", "먹을", "마실", "넣을", "만들", "챙길", "고를", "살펴볼", "가볼", "먹어볼",
 ]);
 
 /**
  * 브랜드·유통사·인물명. 트렌드 "제품"이 아니라 만든 곳/파는 곳/사람이라
- * ODM 스크리닝이나 신제품 기획으로 이어지지 않는다.
+ * 제조처 스크리닝이나 신제품 기획으로 이어지지 않는다.
  * (백테스트에서 비비고·백종원·세븐일레븐·삼립이 후보 상위에 올랐다)
  */
 const KO_BRAND_STOPWORDS = new Set([
@@ -233,6 +269,75 @@ const KO_BRAND_STOPWORDS = new Set([
   // 인물·아이돌명 (제품이 아니라 사람 — 예: "카리나 간식" 같은 콘텐츠 화제어)
   "카리나", "아이유", "뉴진스", "블랙핑크", "방탄", "bts", "아이브", "르세라핌",
 ]);
+
+/**
+ * **총칭 성분** — 제품명이 아니라 "파는 곳 · 신규 여부 · 콘텐츠 포맷 · 먹는 사람 · 넓은 범주"를
+ * 가리키는 말들. 단독으로는 위 KO_STOPWORDS 가 이미 걸러내지만, 한국어 제목은 이것들을
+ * **붙여 써서** 복합어를 만든다(#편의점신상 #쇼핑쇼츠 #아이돌간식 #코스트코필수템).
+ * 불용어 집합은 토큰 정확일치라 이 복합어들이 전부 통과했고, 붙여쓴 해시태그는 novel=true·
+ * 고lift 로 잡혀 발굴 상위를 총칭어로 뒤덮었다.
+ *
+ * ⚠️ 이건 화이트리스트가 아니다. **성분만으로 완전히 분해되는 토큰만** 버린다.
+ *    성분이 아닌 조각이 하나라도 남으면(토마토크림빵·삼립크림빵·자연도소금빵) 통과한다 —
+ *    사전에 없는 신조어는 분해가 안 되므로 이 게이트에 걸리지 않는다.
+ */
+const GENERIC_PARTS = [
+  // 파는 곳 · 유통
+  "편의점", "마트", "이마트", "홈플러스", "코스트코", "다이소", "백화점", "올리브영",
+  "쿠팡", "배민", "시장", "매장", "세븐일레븐", "지에스", "노브랜드",
+  // 신규 · 행사 · 구매 부추김
+  "신상", "신제품", "신메뉴", "신상품", "출시", "품절", "대란", "행사", "할인", "세일",
+  "재입고", "한정", "필수템", "인기템", "꿀템", "추천템", "가성비", "갓성비", "내돈내산",
+  // 콘텐츠 포맷 · 채널
+  "쇼츠", "숏츠", "쇼핑", "리뷰", "후기", "추천", "모음", "순위", "랭킹", "비교",
+  "꿀팁", "정보", "총정리", "브이로그", "먹방", "asmr", "챌린지", "언박싱", "대전",
+  "대결", "월드컵", "협찬", "광고", "영상", "유튜브", "틱톡", "인스타",
+  // 먹는 사람 · 집단
+  "아이돌", "연예인", "아이들", "어린이", "유튜버", "인플루언서", "직장인", "학생",
+  "자취생", "다이어터", "혼밥",
+  // 넓은 범주 (특정 제품이 아님)
+  "간식", "디저트", "음료", "과자", "빵", "베이커리", "카페", "음식", "먹거리",
+  "요리", "레시피", "맛집", "홈카페", "다이어트",
+  // 때 · 곳 일반
+  "오늘", "요즘", "국내", "해외", "일본", "미국", "여름", "겨울",
+];
+
+/** 완전분해 판정용 — 총칭 성분 + 브랜드/인물명(카리나간식·삼립신상 류를 잡는다). */
+const COMPOUND_PARTS = new Set([...GENERIC_PARTS, ...KO_BRAND_STOPWORDS]);
+const MAX_PART_LEN = Math.max(...[...COMPOUND_PARTS].map((w) => w.length));
+/** 분해 결과가 이 개수 미만이면(=토큰 자체가 성분 하나) 단독 총칭어라 기존 불용어 집합이 처리한다. */
+const MIN_PARTS = 2;
+
+/**
+ * 토큰이 **총칭 성분만으로 완전히 분해되는가** (DP).
+ * 편의점신상 = 편의점+신상 → true · 쇼핑쇼츠 = 쇼핑+쇼츠 → true
+ * 토마토크림빵 = 토마토(성분 아님)… → false · 삼립크림빵 = 삼립+크림빵(성분 아님) → false
+ */
+export function isGenericCompound(token: string): boolean {
+  const t = (token ?? "").toLowerCase().replace(/[^a-z0-9가-힣]/g, "");
+  if (t.length < 3) return false;
+  // parts[i] = 앞에서 i글자를 덮는 데 필요한 최소 성분 수 (Infinity = 못 덮음)
+  const parts = new Array(t.length + 1).fill(Infinity);
+  parts[0] = 0;
+  for (let i = 0; i < t.length; i += 1) {
+    if (parts[i] === Infinity) continue;
+    for (let n = 1; n <= MAX_PART_LEN && i + n <= t.length; n += 1) {
+      if (COMPOUND_PARTS.has(t.slice(i, i + n))) {
+        parts[i + n] = Math.min(parts[i + n], parts[i] + 1);
+      }
+    }
+  }
+  // 성분 하나로 끝나면 단독 총칭어 — 여기서 말고 불용어 집합에서 걸러진다.
+  return parts[t.length] >= MIN_PARTS && parts[t.length] !== Infinity;
+}
+
+/**
+ * 1자 어간에 조사가 붙은 조각("손을", "물은"). stripKoreanParticle 은 어간이 2자 미만이면
+ * 짧은 단어 훼손을 막으려 조사를 떼지 않는데, 그 보호가 이런 조각을 그대로 통과시켰다.
+ * 1자짜리 제품명은 없으므로 여기서 버린다.
+ * ⚠️ "사과"(과) · "오이"(이) 처럼 조사와 겹치는 끝글자는 제외한 안전한 조사만 본다.
+ */
+const ONE_CHAR_STEM_PARTICLE = /^[가-힣][은는을를의에]$/;
 
 /**
  * 숫자로 시작하는 구성 표기("2종", "3구", "10입").
@@ -299,6 +404,10 @@ function isUseful(token: string, seedTokens: Set<string>): boolean {
   if (KO_BRAND_STOPWORDS.has(token)) return false;
   // 3자 이상 한글이 활용형 어미로 끝나면 동사·문장 조각 → 제외 (라면 등 2자 식품명은 안전)
   if (/[가-힣]/.test(token) && token.length >= 3 && KO_VERB_ENDING.test(token)) return false;
+  // 1자 어간 + 조사 조각 ("손을") — 제품명이 아니다.
+  if (ONE_CHAR_STEM_PARTICLE.test(token)) return false;
+  // 총칭 성분만으로 완전분해되는 복합어 ("편의점신상"·"쇼핑쇼츠"·"아이돌간식")
+  if (isGenericCompound(token)) return false;
   if (seedTokens.has(token)) return false;
   return true;
 }

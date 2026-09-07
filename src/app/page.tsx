@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { CreamMark } from "@/components/CreamMark";
 import Link from "next/link";
 import { useStore, OVERSEAS_REGIONS } from "@/lib/store-context";
 import { weightFor, applyWeight, neutralWeights, type SignalWeights } from "@/lib/signal-weights";
@@ -11,7 +12,9 @@ import {
   computeTrend,
   discoveryScore,
   gateByLevel,
+  patternBonus,
   trendFromWeeks,
+  volumeNorm,
   type TrendStatus,
 } from "@/lib/trend";
 import { guessFoodType } from "@/lib/odm";
@@ -133,6 +136,93 @@ const ico = (path: string, sw = 2) => (
   </svg>
 );
 
+/**
+ * 발굴점수 계산식 — 열 헤더 툴팁.
+ * ⚠️ trend.ts 의 discoveryScore 와 같은 내용을 말해야 한다. 식을 바꾸면 이 문구도 바꿀 것.
+ */
+const SCORE_FORMULA = [
+  "발굴점수 = 검색량 40% + 상승률 60% + 추세 패턴 보너스",
+  "",
+  "검색량은 로그 스케일로 정규화합니다 (큰 키워드 하나가 만점을 독식하지 않도록).",
+  "상승률은 4주 흐름 — 최근 2주 평균 대비 이전 2주 평균 변화율입니다.",
+  "추세 패턴 보너스: 연속 상승 +2점/주, 연속 하락 −2점/주 (최대 ±6).",
+  "  반등·등락은 방향이 확정되지 않아 0점입니다.",
+  "",
+  "각 행의 점수 막대에 마우스를 올리면 그 키워드의 실제 계산이 보입니다.",
+].join("\n");
+
+/** 발굴점수 구성 — 화면에 "왜 이 점수인가"를 보여주기 위한 분해값. */
+interface ScoreParts {
+  /** 검색량 정규화 0~1 (로그 스케일) */
+  vol: number;
+  /** 상승률 정규화 0~1. 데이터가 없으면 중립값을 쓴다. */
+  rise: number;
+  /** 검색량 기여분(점) */
+  volPart: number;
+  /** 상승률 기여분(점) */
+  risePart: number;
+  /** 추세 패턴 보너스(±, 최대 ±6) */
+  bonus: number;
+  /** 학습된 신호 가중치 배수 (중립이면 1) */
+  mult: number;
+}
+
+/** 상승률 데이터가 없을 때 쓰는 중립값 (trend.ts discoveryScore 와 동일). */
+const RISE_NEUTRAL = 0.35;
+
+/**
+ * 점수 구성을 계산한다.
+ *
+ * ⚠️ trend.ts 의 discoveryScore 와 **같은 식**이어야 한다 — 어긋나면 화면 설명이 거짓말이 된다.
+ *    (가중치 40/60 · 상승률 정규화 (rise+20)/70 · 패턴 보너스 주당 ±2, 최대 ±6)
+ */
+function scoreBreakdown(
+  volume: number,
+  maxVolume: number,
+  riseRate: number | null,
+  pattern: Parameters<typeof patternBonus>[0],
+  streak: number,
+  mult: number,
+): ScoreParts {
+  const vol = volumeNorm(volume, maxVolume);
+  const rise =
+    riseRate === null ? RISE_NEUTRAL : Math.max(0, Math.min(1, (riseRate + 20) / 70));
+  return {
+    vol,
+    rise,
+    volPart: 0.4 * vol * 100,
+    risePart: 0.6 * rise * 100,
+    bonus: patternBonus(pattern, streak),
+    mult,
+  };
+}
+
+/** 발굴점수 셀 툴팁 — 이 키워드가 왜 이 점수인지 숫자로 보여준다. */
+function scoreTitle(parts: ScoreParts | undefined, score: number): string {
+  if (!parts) return "발굴점수";
+  const n = (x: number) => x.toFixed(1);
+  const bonusLine =
+    parts.bonus === 0
+      ? "추세 패턴 보너스 0점 — 반등·등락은 방향이 불분명해 중립"
+      : `추세 패턴 보너스 ${parts.bonus > 0 ? "+" : ""}${parts.bonus}점 — 연속 주당 ±2, 최대 ±6`;
+  const multLine =
+    parts.mult === 1
+      ? null
+      : `학습된 신호 가중치 ×${parts.mult.toFixed(2)} — 출처·신규여부 오탐률 반영`;
+  return [
+    `발굴점수 ${score}점 = 검색량 40% + 상승률 60% + 추세 패턴 보너스`,
+    "",
+    `검색량 40%  → ${n(parts.volPart)}점 (정규화 ${parts.vol.toFixed(2)} · 로그 스케일)`,
+    `상승률 60%  → ${n(parts.risePart)}점 (정규화 ${parts.rise.toFixed(2)})`,
+    bonusLine,
+    multLine,
+    "",
+    "합계를 0~100 으로 잘라 반올림합니다.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 export default function DiscoveryDashboard() {
   const {
     hydrated,
@@ -203,6 +293,16 @@ export default function DiscoveryDashboard() {
         // 발굴 점수에 학습된 신호 신뢰도(출처·신규여부 오탐률)를 배수로 반영. 중립이면 무영향.
         score: applyWeight(
           discoveryScore(c.volumeTotal, maxVol, t.riseRate, t.pattern, t.streak),
+          weightFor(weights, { source: c.source, novel: c.novel }),
+        ),
+        // 점수가 어떻게 나왔는지 화면에서 확인할 수 있게 구성을 함께 남긴다.
+        // ⚠️ 위 score 와 **같은 입력**(maxVol·t·weights)으로 계산해야 설명과 값이 어긋나지 않는다.
+        scoreParts: scoreBreakdown(
+          c.volumeTotal,
+          maxVol,
+          t.riseRate,
+          t.pattern,
+          t.streak,
           weightFor(weights, { source: c.source, novel: c.novel }),
         ),
       };
@@ -311,14 +411,19 @@ export default function DiscoveryDashboard() {
       {/* PAGE HEADER */}
       <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
         <div className="max-w-[640px]">
-          <div className="mb-2.5 flex items-center gap-2.5">
+          <div className="mb-2 flex items-center gap-2.5">
+            <CreamMark className="h-[26px] w-[26px]" />
             <h1 className="text-[26px] font-extrabold tracking-[-0.035em]">
-              키워드 발굴 대시보드
+              크림보드
             </h1>
             <span className="rounded-full bg-accent-soft px-2.5 py-[3px] text-[11px] font-bold text-accent">
               MVP
             </span>
           </div>
+          {/* 이름의 뜻 — 화면에서 한 번만 밝힌다. */}
+          <p className="mb-3 text-[13px] font-medium text-accent-ink">
+            크림은 위로 뜹니다. 떠오르는 트렌드를 먼저 걷어 올립니다.
+          </p>
           <p className="mb-3 text-sm leading-relaxed text-muted-strong">
             <b className="font-medium">국내</b>는 유튜브 콘텐츠에서 신조어를 발굴하고, 그 발굴어를{" "}
             <b className="font-medium">네이버 검색 자동완성으로 확장</b>한 뒤{" "}
@@ -343,7 +448,7 @@ export default function DiscoveryDashboard() {
           <button
             onClick={onDiscover}
             disabled={discovering}
-            title="유튜브 API 쿼터를 사용합니다 (시드 1개당 약 500 units)"
+            title="유튜브 API 쿼터를 사용합니다 (시드 1개당 약 900 units)"
             style={{ background: "linear-gradient(145deg,#5a9b12,#4e8b10)" }}
             className="flex h-[42px] items-center gap-2 rounded-[11px] px-5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
           >
@@ -476,6 +581,21 @@ export default function DiscoveryDashboard() {
         </div>
       </div>
 
+      {/* 점수 산식 안내 — 랭킹이 어떤 근거로 매겨졌는지 표 위에서 바로 보이게 한다. */}
+      {enriched.length > 0 && (
+        <p className="mb-3.5 text-xs leading-relaxed text-muted">
+          <b className="font-semibold text-muted-strong">발굴점수</b> = 검색량 40% + 상승률 60% +
+          추세 패턴 보너스.{" "}
+          <span title={SCORE_FORMULA} className="cursor-help underline decoration-dotted">
+            추세 패턴 보너스
+          </span>
+          는 연속 상승 +2점/주 · 연속 하락 −2점/주(최대 ±6)이고, 반등·등락은 방향이 확정되지 않아
+          0점입니다. 점수 막대에 마우스를 올리면 그 키워드의 실제 계산이 보입니다.{" "}
+          <b className="font-semibold text-muted-strong">정렬</b>은 상승률 기준이며, 구매 의향(쇼핑)은
+          함께 표시만 하고 점수에는 넣지 않습니다.
+        </p>
+      )}
+
       {msg && (
         <div
           className={`mb-3.5 rounded-xl px-4 py-3 text-sm ${
@@ -573,7 +693,12 @@ export default function DiscoveryDashboard() {
                     상승률
                   </Th>
                   <Th className="text-right">월 검색량</Th>
-                  <Th className="w-[200px] text-left">발굴점수</Th>
+                  <Th
+                    className="w-[200px] text-left"
+                    title={SCORE_FORMULA}
+                  >
+                    발굴점수
+                  </Th>
                   <Th className="w-32 pr-6 text-right">저장</Th>
                 </tr>
               </thead>
@@ -630,7 +755,10 @@ export default function DiscoveryDashboard() {
                         {c.volumeTotal > 0 ? formatCount(c.volumeTotal) : "—"}
                       </td>
                       <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2.5">
+                        <div
+                          className="flex cursor-help items-center gap-2.5"
+                          title={scoreTitle(c.scoreParts, c.score)}
+                        >
                           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#f0eee9]">
                             <div
                               className="h-full rounded-full"
@@ -821,12 +949,12 @@ export default function DiscoveryDashboard() {
                               href={href}
                               title={
                                 type
-                                  ? `"${k.name}" → ${type} 제조 이력이 있는 ODM 업체 찾기`
-                                  : `"${k.name}" 제조사 찾기 (ODM 화면에서 유형 선택)`
+                                  ? `"${k.name}" → ${type} 제조 이력이 있는 제조처 찾기`
+                                  : `"${k.name}" 제조처 찾기 (제조처 화면에서 유형 선택)`
                               }
                               className="inline-flex items-center gap-1 whitespace-nowrap rounded-[9px] border border-line px-2.5 py-1.5 text-xs font-semibold text-muted-strong transition-colors hover:border-accent-bright hover:bg-accent-soft hover:text-accent"
                             >
-                              ODM
+                              제조처
                               {type && <span className="font-normal text-muted">· {type}</span>}
                             </Link>
                           );
@@ -842,7 +970,7 @@ export default function DiscoveryDashboard() {
       )}
 
       <div className="mt-7 border-t border-line pt-5 text-xs text-muted">
-        NATA TABLE 트렌드 모니터 · MVP · 데이터: 네이버 검색광고·데이터랩 · YouTube
+        크림보드 · MVP · 데이터: 네이버 검색광고·데이터랩 · YouTube
       </div>
     </div>
   );

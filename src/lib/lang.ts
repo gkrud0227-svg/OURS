@@ -22,9 +22,38 @@ const NON_EN_FUNCTION_WORDS = [
   // id / ms
   "yang", "dan", "dengan", "ini", "itu", "tidak", "saya", "dari", "untuk",
   "adalah", "ada", "bisa", "akan", "kita", "juga",
+  // hi / ur (로마자 표기) — 인도 영어권 콘텐츠가 US 검색을 뒤덮는다. 실측(US "viral food")에서
+  // 상위 후보가 janmashtami·banaye·roti·onam 로 채워졌다. 영어 기능어 검사로는 안 걸린다.
+  // ⚠️ 영어 단어와 겹치는 것(par·se·main)은 넣지 않는다.
+  "hai", "aur", "mein", "kya", "nahi", "kaise", "banaye", "banane", "banaya",
+  "wala", "wali", "bhi", "liye", "karne", "karo", "ghar", "desi", "yeh", "koi",
 ];
 
 const CJK_RE = /[가-힣ぁ-んァ-ヶ一-鿿]/g;
+/**
+ * 라틴 문자가 아닌 **표기 체계**. 한 글자만 있어도 영어 문서로 보지 않는다.
+ *
+ * relevanceLanguage=en · regionCode=US 로 검색해도 남아시아·태국권 콘텐츠가 대량으로 섞인다
+ * (실측: 상위 후보가 janmashtami·paratha·biryani·odia 로 채워짐). 그쪽 제목은 영어 해시태그를
+ * 달되 본문에 고유 문자가 남는 경우가 많아, 문자 종류로 거르는 편이 기능어 검사보다 정확하다.
+ * ⚠️ 이모지는 문자 범위 밖이라 영향받지 않는다.
+ */
+const NON_LATIN_SCRIPT_RE = new RegExp(
+  "[" +
+    "\u0900-\u097F" + // 데바나가리 (힌디·마라티)
+    "\u0980-\u09FF" + // 벵골어
+    "\u0A00-\u0A7F" + // 구르무키 (펀자브)
+    "\u0A80-\u0AFF" + // 구자라트어
+    "\u0B00-\u0B7F" + // 오리야어
+    "\u0B80-\u0BFF" + // 타밀어
+    "\u0C00-\u0C7F" + // 텔루구어
+    "\u0C80-\u0CFF" + // 칸나다어
+    "\u0D00-\u0D7F" + // 말라얄람어
+    "\u0E00-\u0E7F" + // 태국어
+    "\u0600-\u06FF" + // 아랍어
+    "\u0400-\u04FF" + // 키릴 문자
+    "]",
+);
 /** 이 개수를 넘는 CJK 문자가 있으면 영어 문서로 보지 않는다. */
 const CJK_LIMIT = 5;
 
@@ -48,6 +77,7 @@ export function isEnglishish(text: string): boolean {
   const raw = text ?? "";
   const cjk = raw.match(CJK_RE);
   if (cjk && cjk.length > CJK_LIMIT) return false;
+  if (NON_LATIN_SCRIPT_RE.test(raw)) return false;
 
   const t = normalize(raw);
   const en = countWords(t, EN_FUNCTION_WORDS);

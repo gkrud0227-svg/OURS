@@ -113,7 +113,7 @@ export async function POST(request: Request) {
   if (quotaHit && results.every((r) => r.sampled === 0)) {
     return NextResponse.json(
       {
-        error: "YouTube 일일 쿼터를 모두 썼습니다. 태평양시 자정 초기화 후 다시 시도하세요.",
+        error: "YouTube 일일 쿼터를 모두 썼습니다. 한국시간 오후 4시(16:00) 초기화 후 다시 시도하세요.",
         detail: joined,
       },
       { status: 429 },

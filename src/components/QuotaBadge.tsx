@@ -31,7 +31,7 @@ export function QuotaBadge() {
 
   return (
     <span
-      title="유튜브 Data API 일일 쿼터 추정치입니다. 우리 발굴 사용량을 누적해 표시하며 태평양 표준시(PT) 자정에 리셋됩니다. 실제 구글 집계와 다를 수 있어요."
+      title="유튜브 Data API 일일 쿼터 추정치입니다. 우리 발굴 사용량을 누적해 표시하며 한국시간 오후 4시(16:00)에 리셋됩니다. 실제 구글 집계와 다를 수 있어요."
       style={{
         display: "inline-flex",
         alignItems: "center",

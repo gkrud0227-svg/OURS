@@ -53,7 +53,7 @@ export const FOOD_TYPE_PRESETS: { label: string; types: string[] }[] = [
 
 /**
  * 대시보드 카테고리 → 식품안전나라 대표 품목유형.
- * 트렌드 화면에서 "이 카테고리로 ODM 스크리닝"으로 넘어올 때 쓴다.
+ * 트렌드 화면에서 "이 카테고리로 제조처 스크리닝"으로 넘어올 때 쓴다.
  */
 export const CATEGORY_TO_FOOD_TYPE: Record<string, string> = {
   베이커리: "빵류",
@@ -67,7 +67,7 @@ export const CATEGORY_TO_FOOD_TYPE: Record<string, string> = {
  *
  * 발굴 화면에 뜨는 건 "두바이초콜릿", "밤티라미수" 같은 제품명이라 품목유형이 아니다.
  * 품목제조보고는 공식 분류명(빵류·초콜릿류…)으로만 검색되므로, 키워드에 든 단서로
- * 대표 유형을 추정해 ODM 스크리닝으로 넘긴다.
+ * 대표 유형을 추정해 제조처 스크리닝으로 넘긴다.
  *
  * 앞쪽 규칙이 우선한다 — "초코소금빵"은 빵으로 봐야지 초콜릿류로 가면 안 된다.
  * 확신이 없으면 null 을 돌려주고, 화면에서 사용자가 직접 고르게 한다.
@@ -130,22 +130,80 @@ export function guessFoodType(term: string): string | null {
 }
 
 /**
- * 기존 거래(또는 컨택 중인) ODM 제조사.
+ * 기존 거래(또는 컨택 중인) 제조처 — **상호 단위**.
  *
  * 식품유형 역검색 결과에서 이 업체들을 맨 위로 올리고 "기존 거래" 배지를 단다.
- * 상호가 공장·법인 형태로 길게 등록되므로(예: "에스피씨삼립(주) 대구공장")
- * 부분 매칭한다. 거래처가 바뀌면 이 배열만 고치면 된다.
+ * 식약처는 상호를 공장·법인 형태로 길게 등록하므로(예: "에스피씨삼립(주) 대구공장")
+ * 부분 매칭한다. 그래서 **사업장이 아니라 상호만** 넣는다 — 한 상호가 여러 공장을 덮는다
+ * (삼립 서천·시화·호남 → "삼립" 하나). 짧을수록 안전하다: 넓게 잡히면 결과에 업체명이
+ * 보이지만, 좁게 잡히면 조용히 0건이 되어 누락을 눈치채지 못한다.
+ *
+ * 거래처가 바뀌면 이 배열만 고치면 된다. 크론(/api/odm-cron)도 이 배열을 읽는다.
  */
 export const KNOWN_PARTNERS = [
-  "삼립",
+  "고은푸드",
+  "광복",
+  "광천김",
+  "굿모닝푸드",
+  "남향푸드또띠아",
+  "덕산식품",
+  "동림푸드",
+  "동방제유",
+  "동성식품",
   "디엔비",
+  "디케이식품",
+  "롯데웰푸드",
   "리빙라이프",
+  "매일유업",
+  "명광식품",
+  "모모",
+  "바비조아",
+  "보성농협",
+  "보해양조",
+  "비앤비코리아",
   "비엘에프씨",
+  "사조대림",
+  "사조동아원",
+  "사조산업",
+  "사조해표",
+  "삼립",
+  "삼양패키징",
+  "서강유업",
+  "서울향료",
+  "서흥",
+  "선양",
+  "세웅수산",
+  "세진식품",
+  "순창성가정식품",
+  "엄마사랑",
+  "엄지식품",
   "엠에스씨",
   "영의정",
+  "예산농협",
+  "오포영농조합",
+  "용인시농협",
+  "우양",
+  "우일수산",
   "유성씨앤에프",
-  "서울식품공업",
+  "이가자연면",
+  "이노하스",
+  "이든에프앤씨",
+  "젠푸드",
+  "지지푸드",
+  "진푸드",
+  "참고을",
+  "코스모스제과",
+  "쿠키아",
+  "티피에프앤비",
+  "푸르온",
+  "푸른농산",
   "하이원푸드",
+  "한밭식품",
+  "한우물",
+  "해오름식품",
+  "화경",
+  "훼미리식품",
+  "SL푸드원",
 ];
 
 /** 업체명(길게 등록된 상호)이 기존 거래처인지 부분 매칭으로 판정. */
@@ -190,7 +248,9 @@ export async function fetchOdm(params: {
   product?: string;
   page?: number;
   maxRows?: number;
-}): Promise<OdmResponse> {
+  /** 거래처 전체를 서버에서 검색 (fetchOdmPartners 전용). */
+  partnerSearch?: boolean;
+}): Promise<OdmResponse & { missingPartners?: string[] }> {
   const res = await fetch("/api/odm", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -204,7 +264,7 @@ export async function fetchOdm(params: {
   }
   if (!res.ok) {
     const e = json as { error?: string; detail?: string; needsKey?: boolean };
-    const message = e?.error ?? "ODM 조회에 실패했습니다.";
+    const message = e?.error ?? "제조처 조회에 실패했습니다.";
     if (e?.needsKey) throw new OdmKeyError(message);
     throw new Error(e?.detail ? `${message} (${e.detail})` : message);
   }
@@ -225,62 +285,73 @@ const PARTNER_CATALOG_LIMIT = 5000;
  */
 export async function fetchOdmPartners(
   filter: { product?: string; foodType?: string },
-  partners: string[] = KNOWN_PARTNERS,
+  partners?: string[],
 ): Promise<OdmResponse> {
-  const byProduct = filter.product != null;
-  const kw = (filter.product ?? filter.foodType ?? "").trim().toLowerCase();
-
-  const settled = await Promise.allSettled(
-    partners.map((p) => fetchOdm({ company: p, maxRows: PARTNER_CATALOG_LIMIT })),
-  );
-
-  const items: OdmItem[] = [];
-  let cached = false;
-  let cachedAt: string | null = null;
-  let anyOk = false;
-  let capped = false;
-  let keyErr: OdmKeyError | null = null;
-  let lastErr: Error | null = null;
-
-  for (const s of settled) {
-    if (s.status === "fulfilled") {
-      anyOk = true;
-      if (s.value.hasMore) capped = true; // 카탈로그가 1000건을 넘겨 일부만 검색됨
-      const matched = s.value.items.filter((it) =>
-        (byProduct ? it.product : it.foodType).toLowerCase().includes(kw),
-      );
-      items.push(...matched);
-      if (s.value.cached) {
-        cached = true;
-        cachedAt = s.value.cachedAt ?? cachedAt;
+  // 업체를 지정했으면 그 업체만 — 예전처럼 카탈로그를 받아 클라이언트에서 거른다(소량).
+  if (partners?.length) {
+    const byProduct = filter.product != null;
+    const kw = (filter.product ?? filter.foodType ?? "").trim().toLowerCase();
+    const settled = await Promise.allSettled(
+      partners.map((p) => fetchOdm({ company: p, maxRows: PARTNER_CATALOG_LIMIT })),
+    );
+    const items: OdmItem[] = [];
+    let cached = false;
+    let cachedAt: string | null = null;
+    let anyOk = false;
+    let capped = false;
+    let keyErr: OdmKeyError | null = null;
+    let lastErr: Error | null = null;
+    for (const r of settled) {
+      if (r.status === "fulfilled") {
+        anyOk = true;
+        if (r.value.hasMore) capped = true;
+        items.push(
+          ...r.value.items.filter((it) =>
+            (byProduct ? it.product : it.foodType).toLowerCase().includes(kw),
+          ),
+        );
+        if (r.value.cached) {
+          cached = true;
+          cachedAt = r.value.cachedAt ?? cachedAt;
+        }
+      } else if (r.reason instanceof OdmKeyError) {
+        keyErr = r.reason;
+      } else if (r.reason instanceof Error) {
+        lastErr = r.reason;
       }
-    } else if (s.reason instanceof OdmKeyError) {
-      keyErr = s.reason;
-    } else if (s.reason instanceof Error) {
-      lastErr = s.reason;
     }
+    if (!anyOk) {
+      if (keyErr) throw keyErr;
+      throw lastErr ?? new Error("조회에 실패했습니다.");
+    }
+    const notices: string[] = [];
+    if (cached) notices.push("미리 받아둔 자료입니다.");
+    if (capped) notices.push(`품목이 많은 거래처는 최근 ${PARTNER_CATALOG_LIMIT}건 내에서 검색했습니다.`);
+    return {
+      total: items.length,
+      page: 1,
+      pageSize: items.length,
+      hasMore: false,
+      items,
+      cached,
+      cachedAt: cached ? cachedAt : undefined,
+      notice: notices.join(" ") || undefined,
+    };
   }
 
-  // 파트너 전부 실패 = 키 문제거나 서버 오류. 대표 에러를 그대로 올린다.
-  if (!anyOk) {
-    if (keyErr) throw keyErr;
-    throw lastErr ?? new Error("조회에 실패했습니다.");
-  }
-
+  // 거래처 전체 검색은 **서버에서** 캐시를 훑는다 — 요청 1개로 끝난다.
+  // 예전에는 거래처마다 요청을 던져 카탈로그(업체당 최대 5,000행)를 통째로 받아 걸렀는데,
+  // 거래처가 63곳이 되면서 브라우저가 감당할 양이 아니게 됐다.
+  const res = await fetchOdm({ ...filter, partnerSearch: true });
+  const missing = res.missingPartners ?? [];
   const notices: string[] = [];
-  if (cached) notices.push("일부는 미리 받아둔 자료입니다.");
-  if (capped) notices.push(`품목이 많은 거래처는 최근 ${PARTNER_CATALOG_LIMIT}건 내에서 검색했습니다.`);
-
-  return {
-    total: items.length,
-    page: 1,
-    pageSize: items.length,
-    hasMore: false,
-    items,
-    cached,
-    cachedAt: cached ? cachedAt : undefined,
-    notice: notices.join(" ") || undefined,
-  };
+  if (res.cached) notices.push("미리 받아둔 자료로 검색했습니다.");
+  if (missing.length) {
+    notices.push(
+      `아직 자료를 못 받은 거래처 ${missing.length}곳은 검색에서 빠졌습니다(${missing.slice(0, 3).join(", ")}${missing.length > 3 ? " 외" : ""}).`,
+    );
+  }
+  return { ...res, notice: notices.join(" ") || res.notice };
 }
 
 /* ---------- 후보 리스트 (컨택 상태 관리) ---------- */

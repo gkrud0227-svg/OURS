@@ -106,6 +106,43 @@ export interface ReasonResult {
   categories: ReasonCategory[];
 }
 
+/**
+ * 키워드별 확산 이유 — 후보 키워드 하나가 등장한 영상의 시청자 댓글만 모아 집계한
+ * 이유 분포. "이 키워드가 왜 퍼지나"를 키워드마다 귀속한다(전체 합산이 아님).
+ */
+export interface KeywordReason {
+  term: string;
+  /** 이 키워드에 귀속된(=그 키워드가 나온 영상들의) 댓글 수. 근거 두께. */
+  commentCount: number;
+  /** 이유를 집계한 영상 수. */
+  videoCount: number;
+  /** 이유 분포(댓글 기반). categories[0]가 대표 이유. */
+  reasons: ReasonResult;
+}
+
+/**
+ * SNS 확산 흐름 — 발굴 영상 제목·설명에서 **실제로 함께 등장한 키워드**를
+ * 언급 영상 수 순으로 집계한 것. (추상 이유 태그가 아니라 구체어)
+ */
+export interface CoFlowTerm {
+  term: string;
+  /** 이 용어가 등장한 발굴 영상 수 */
+  videos: number;
+  /** 이 용어를 쓴 채널 수 */
+  channels: number;
+  /** 급증 배수 (최근 채널 비율 ÷ 과거 채널 비율) */
+  lift: number;
+  /** 과거 표본엔 없던 신규 등장어 */
+  novel: boolean;
+}
+
+export interface CoFlowResult {
+  /** 집계에 쓴 고유 발굴 영상 수 (흐름의 분모) */
+  videoCount: number;
+  /** 언급 영상 수 내림차순 상위 용어 */
+  terms: CoFlowTerm[];
+}
+
 export interface YouTubeStat {
   /** 전체 매칭 영상 수(추정) = search.list pageInfo.totalResults. */
   videoCount: number;

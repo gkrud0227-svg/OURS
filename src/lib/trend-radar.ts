@@ -87,7 +87,8 @@ export interface NewsTerm {
   novelty: "new" | "rising" | "known" | "baseline";
 }
 
-export async function fetchFoodNews(): Promise<{
+/** @param region "overseas" 면 해외 매체만 스캔한다 (해외 발굴 랭킹용). */
+export async function fetchFoodNews(region?: "overseas" | "domestic"): Promise<{
   terms: NewsTerm[];
   scanned: string[];
   failed: string[];
@@ -96,7 +97,7 @@ export async function fetchFoodNews(): Promise<{
   baselineJustSet?: boolean;
   error?: string;
 }> {
-  const res = await fetch("/api/food-news");
+  const res = await fetch(region ? `/api/food-news?region=${region}` : "/api/food-news");
   const json = (await res.json()) as {
     terms?: NewsTerm[];
     scanned?: string[];

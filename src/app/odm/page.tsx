@@ -81,7 +81,7 @@ export default function OdmPage() {
   useEffect(() => {
     setCandidates(loadCandidates());
     setHydrated(true);
-    // 트렌드 화면에서 "ODM 스크리닝" 으로 넘어온 경우.
+    // 트렌드 화면에서 "제조처 스크리닝" 으로 넘어온 경우.
     // type = 품목유형(자동 조회), term = 원래 트렌드 키워드(맥락 표시용)
     const params = new URLSearchParams(window.location.search);
     const t = params.get("type");
@@ -183,7 +183,7 @@ export default function OdmPage() {
     <div className="space-y-7">
       <header>
         <div className="mb-2.5 flex items-center gap-2.5">
-          <h1 className="text-[26px] font-extrabold tracking-[-0.035em]">ODM 스크리닝</h1>
+          <h1 className="text-[26px] font-extrabold tracking-[-0.035em]">제조처 스크리닝</h1>
           <span className="rounded-full bg-accent-soft px-2.5 py-[3px] text-[11px] font-bold text-accent">
             식품안전나라
           </span>
@@ -299,7 +299,7 @@ export default function OdmPage() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={
               mode === "company"
-                ? "ODM 업체명 (예: 삼립)"
+                ? "제조처명 (예: 삼립)"
                 : mode === "product"
                   ? "제품명 키워드 (예: 황치즈)"
                   : "식품유형 (예: 빵류)"

@@ -2,21 +2,31 @@ import { NextResponse } from "next/server";
 import { docTerms, seedTokenSet } from "@/lib/cooccurrence";
 import { localeForRegion, localePredicate } from "@/lib/lang";
 import { contextOf, contextTagOf, CONTEXT_RANK } from "@/lib/food-context";
-import { analyzeReasons, type ReasonLocale } from "@/lib/reasons";
+import { reactionOf } from "@/lib/reaction";
 
 const SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 const VIDEOS_URL = "https://www.googleapis.com/youtube/v3/videos";
+const CHANNELS_URL = "https://www.googleapis.com/youtube/v3/channels";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /** search.list는 요청당 100 units, videos.list는 1 unit. */
 const SEARCH_UNITS = 100;
 const VIDEOS_UNITS = 1;
+// 키워드별 확산 이유(댓글 기반)는 별도 엔드포인트 /api/keyword-reasons 로 분리했다.
+// 그쪽은 검색검증으로 걸러진 상위 제품 후보만 대상으로 order=viewCount 인기영상 댓글을 본다.
 /** 시드 수 상한. 시드 1개당 약 500 units(최근 2p + 기준선 3p) — 8개면 회당 약 4,000.
  *  기준선은 12시간 캐시되므로 반복 실행 비용은 이보다 훨씬 낮다. */
 const MAX_SEEDS = 8;
 
-/** 코퍼스당 검색 페이지 수 (1페이지 = 영상 50건). */
-const RECENT_PAGES = 2;
+/**
+ * 코퍼스당 검색 페이지 수 (1페이지 = 영상 50건).
+ *
+ * order=date 는 **최신순**이라 페이지 수가 곧 창의 실제 폭이다. publishedAfter 를 넓혀도
+ * 페이지가 모자라면 같은 "최신 N건"만 돌아온다 — 실측(KR "신상 디저트"): 2페이지=100건이
+ * 9.6일치라 창 14일과 30일의 코퍼스가 **완전히 동일**했다.
+ * 1페이지 ≈ 4.8일 기준으로 recentDays(30일)를 실제로 덮으려면 6페이지가 필요하다.
+ */
+const RECENT_PAGES = 6;
 /** 기준선은 넓을수록 좋다. 흔한 말이 기준선에 확실히 잡혀야 lift가 변별력을 갖는다.
  *  12시간 캐시되므로 비용은 첫 실행에만 든다. */
 const BASELINE_PAGES = 3;
@@ -43,9 +53,11 @@ const ORDER = "date";
  *    (`these creative ideas look super satisfying`) "10개 영상에서 등장"으로
  *    보인다. 진짜 트렌드는 **여러 채널로 번진다.**
  *
- * 신조어는 희소하므로(knafeh 1건) 2로 둔다. 3이면 갓 태어난 트렌드가 잘린다.
+ * 예전엔 2였다 — 최근 코퍼스가 ~116채널이라 3이면 갓 태어난 트렌드가 잘렸다.
+ * RECENT_PAGES 6 으로 넓힌 뒤 최근 채널이 ~671개가 됐으므로, 같은 "2채널"은 예전보다
+ * 훨씬 느슨한 문턱이 됐다. 표본에 맞춰 3으로 올린다.
  */
-const MIN_RECENT_CHANNELS = 2;
+const MIN_RECENT_CHANNELS = 3;
 /** 표본이 작을 때 lift가 폭주하는 것을 막는다. */
 const MAX_LIFT = 40;
 /**
@@ -94,6 +106,14 @@ interface Doc {
   /** 언어 판별용 — 제목만으론 너무 짧다. */
   text: string;
   views: number;
+  /** 좋아요 수 — 비공개면 null. 0 으로 두면 "반응 없음"과 구분이 안 된다. */
+  likes: number | null;
+  /** 댓글 수 — 댓글이 꺼져 있으면 null. */
+  comments: number | null;
+  /** 영상 길이(초) — 쇼츠는 비구독자에게 배포돼 조회/구독 비율이 구조적으로 커서 분리해야 한다. */
+  durationSec: number;
+  /** 채널 구독자 수 — 비공개면 null. 채널 단위로 한 번만 조회해 채운다. */
+  subs: number | null;
   channelId: string;
   /** 채널 제목 — 창작자가 제목에 자기 채널명을 넣어 생기는 노이즈를 거르는 데 쓴다. */
   channelTitle: string;
@@ -105,7 +125,8 @@ interface SearchItem {
 interface VideoItem {
   id?: string;
   snippet?: { title?: string; description?: string; channelId?: string; channelTitle?: string };
-  statistics?: { viewCount?: string };
+  statistics?: { viewCount?: string; likeCount?: string; commentCount?: string };
+  contentDetails?: { duration?: string };
 }
 
 /**
@@ -146,12 +167,26 @@ async function searchPage(
   };
 }
 
+/** ISO 8601 duration(PT#H#M#S) → 초. 쇼츠(≤60초) 판별에 쓴다. */
+function parseDurationSec(iso: string | undefined): number {
+  const m = /PT(?:(d+)H)?(?:(d+)M)?(?:(d+)S)?/.exec(iso ?? "");
+  if (!m) return 0;
+  return Number(m[1] ?? 0) * 3600 + Number(m[2] ?? 0) * 60 + Number(m[3] ?? 0);
+}
+
+/** 숫자 문자열 → number. 필드가 없으면(비공개·댓글차단) null — 0 과 구분한다. */
+function optNum(v: string | undefined): number | null {
+  return v === undefined ? null : Number(v);
+}
+
 async function hydrate(key: string, ids: string[]): Promise<Doc[]> {
   if (!ids.length) return [];
   // 검색 스니펫의 description은 잘려 있어 videos.list로 전문을 받는다 (1 unit).
+  // statistics 는 이미 받고 있었다 — likeCount/commentCount 는 **추가 쿼터 없이** 딸려온다.
+  // contentDetails 도 같은 호출의 part 확장이라 비용이 늘지 않는다.
   const vp = new URLSearchParams({
     key,
-    part: "snippet,statistics",
+    part: "snippet,statistics,contentDetails",
     id: ids.join(","),
     maxResults: "50",
   });
@@ -164,6 +199,10 @@ async function hydrate(key: string, ids: string[]): Promise<Doc[]> {
     desc: v.snippet?.description ?? "",
     text: `${v.snippet?.title ?? ""} ${v.snippet?.description ?? ""}`,
     views: Number(v.statistics?.viewCount ?? 0),
+    likes: optNum(v.statistics?.likeCount),
+    comments: optNum(v.statistics?.commentCount),
+    durationSec: parseDurationSec(v.contentDetails?.duration),
+    subs: null, // 채널 단위로 뒤에서 채운다
     channelId: v.snippet?.channelId ?? v.id ?? "",
     channelTitle: v.snippet?.channelTitle ?? "",
   }));
@@ -214,6 +253,51 @@ async function fetchBaseline(
 }
 
 /** 표본이 붕괴하지 않는 선에서만 언어 필터를 적용한다. */
+/** channels.list 1회에 채널 50개. 발굴 1회(≈700채널)에 약 14 units — 사실상 무료. */
+const CHANNELS_UNITS = 1;
+const CHANNELS_PER_CALL = 50;
+/**
+ * 구독자 수를 채워 넣는다 (조회/구독 비율용).
+ *
+ * 조회수만 보면 **크리에이터 체급이 섞인다** — 실측에서 조회 1위가 구독 100만 채널의 0.3배
+ * 영상(평소보다 못 낸 것)이었고, 구독 604명이 51,504회를 낸 진짜 반응은 4위로 밀렸다.
+ * 구독자로 나누면 그 편향이 사라진다.
+ *
+ * ⚠️ 구독자 수는 공개값이 3자리로 반올림되고 숨길 수도 있다(hiddenSubscriberCount).
+ *    숨김·미조회는 null 로 두고 비율 계산에서 제외한다 — 0 으로 두면 나눗셈이 폭주한다.
+ */
+async function fillSubscribers(key: string, docs: Doc[]): Promise<number> {
+  const ids = [...new Set(docs.map((d) => d.channelId).filter(Boolean))];
+  if (!ids.length) return 0;
+  const subsById = new Map<string, number | null>();
+  let units = 0;
+  for (let i = 0; i < ids.length; i += CHANNELS_PER_CALL) {
+    const cp = new URLSearchParams({
+      key,
+      part: "statistics",
+      id: ids.slice(i, i + CHANNELS_PER_CALL).join(","),
+      maxResults: String(CHANNELS_PER_CALL),
+    });
+    try {
+      const res = await fetch(`${CHANNELS_URL}?${cp}`, { cache: "no-store" });
+      units += CHANNELS_UNITS;
+      if (!res.ok) continue; // 이 묶음만 건너뛴다 — 구독자는 보조 지표라 발굴을 막지 않는다
+      const json = (await res.json()) as {
+        items?: { id?: string; statistics?: { subscriberCount?: string; hiddenSubscriberCount?: boolean } }[];
+      };
+      for (const it of json.items ?? []) {
+        if (!it.id) continue;
+        const st = it.statistics ?? {};
+        subsById.set(it.id, st.hiddenSubscriberCount || st.subscriberCount === undefined ? null : Number(st.subscriberCount));
+      }
+    } catch {
+      // 네트워크 실패도 무시 — subs 가 null 로 남을 뿐이다
+    }
+  }
+  for (const d of docs) d.subs = subsById.get(d.channelId) ?? null;
+  return units;
+}
+
 function filterByLocale(docs: Doc[], keep: (t: string) => boolean): Doc[] {
   const kept = docs.filter((d) => keep(d.text));
   return kept.length >= 5 ? kept : docs;
@@ -327,34 +411,6 @@ function dropSynonyms<T extends { term: string; channelKey: string }>(rows: T[])
 }
 
 /**
- * 채널명을 후보에서 뺀다.
- *
- * 창작자가 제목에 자기 채널명을 넣는 일이 잦아, 채널명이 "여러 영상에서 반복되는
- * 신조어"처럼 보인다. 예측력 백테스트에서 `이웃집통통`(×48.2)이 최고 히트로
- * 잡혔는데 유튜브 채널명이었다. `여수언니`·`포비빅`도 같은 경우다.
- *
- * 채널 제목을 정규화해 후보 용어가 거기 포함되면 버린다.
- */
-function dropChannelNames<T extends { term: string }>(rows: T[], docs: Doc[]): T[] {
-  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9가-힣]/g, "");
-  const names = new Set<string>();
-  for (const d of docs) {
-    const n = norm(d.channelTitle);
-    if (n.length >= 2) names.add(n);
-  }
-  if (!names.size) return rows;
-  return rows.filter((r) => {
-    const t = norm(r.term);
-    if (t.length < 2) return true;
-    for (const n of names) {
-      // 채널명과 같거나, 채널명 안에 통째로 들어가면 채널 유래로 본다.
-      if (n === t || (t.length >= 3 && n.includes(t))) return false;
-    }
-    return true;
-  });
-}
-
-/**
  * 더 구체적인 후보의 조각인 용어를 뺀다.
  *
  * 토큰화 과정에서 `두바이초콜릿`과 함께 `두바`·`초콜릿`이 따로 후보로 올라온다.
@@ -416,8 +472,10 @@ export async function POST(request: Request) {
   }
 
   const region = (body.region ?? "US").toUpperCase();
-  // 짧을수록 좋다 — order=date라 창을 넓히면 오래된 업로드가 아니라 표본만 흐려진다.
-  const recentDays = Math.min(Math.max(body.recentDays ?? 14, 7), 120);
+  // ⚠️ 창 폭은 RECENT_PAGES 와 **함께** 움직여야 한다. order=date 는 최신순이라 페이지 수가
+  //    고정이면 창을 넓혀도 같은 "최신 N건"이 돌아온다(실측: 2페이지=100건이 9.6일치라
+  //    14일↔30일 코퍼스가 완전히 동일했다). 창을 넓힐 땐 페이지도 함께 올릴 것.
+  const recentDays = Math.min(Math.max(body.recentDays ?? 30, 7), 120);
   const baselineStartDays = Math.min(Math.max(body.baselineStartDays ?? 365, 60), 730);
   const baselineEndDays = Math.min(Math.max(body.baselineEndDays ?? 90, 30), baselineStartDays - 30);
   const topN = Math.min(Math.max(body.topN ?? 20, 5), 100);
@@ -474,7 +532,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: quotaHit
-          ? "YouTube 일일 쿼터를 모두 썼습니다. 내일(태평양시 자정) 초기화된 뒤 다시 시도하세요."
+          ? "YouTube 일일 쿼터를 모두 썼습니다. 한국시간 오후 4시(16:00) 초기화된 뒤 다시 시도하세요."
           : "최근 영상을 가져오지 못했습니다.",
         detail: quotaHit
           ? `발굴 1회는 시드당 검색 ${RECENT_PAGES + BASELINE_PAGES}회(약 ${
@@ -491,11 +549,25 @@ export async function POST(request: Request) {
   const keep = localePredicate(locale);
   const R = filterByLocale(recent, keep);
   const B = filterByLocale(baseline, keep);
+
+  // 반응 지표용 구독자 수 — 최근 코퍼스만(기준선은 순위에 안 쓰인다). 약 14 units.
+  units += await fillSubscribers(key, R);
   const droppedByLang = recent.length - R.length + (baseline.length - B.length);
 
   // 모든 시드 토큰은 후보에서 제외 (시드 자신이 1위로 뜨는 것을 막는다)
   const seedTokens = new Set<string>();
   for (const seed of seeds) for (const t of seedTokenSet(seed)) seedTokens.add(t);
+
+  // 용어 → 그 용어가 등장한 최근 영상들 (반응 지표 집계용)
+  const docsByTerm = new Map<string, Doc[]>();
+  for (const d of R) {
+    const source = `${d.title} . ${(d.desc ?? "").slice(0, DESC_TERM_CHARS)}`;
+    for (const term of docTerms(source, seedTokens, { hashtags: true })) {
+      const arr = docsByTerm.get(term);
+      if (arr) arr.push(d);
+      else docsByTerm.set(term, [d]);
+    }
+  }
 
   const examples: ExampleIndex = new Map();
   const contextIdx: ContextIndex = new Map();
@@ -536,7 +608,11 @@ export async function POST(request: Request) {
     // 점수는 lift 단독. 동점이면 더 많은 채널로 번진 쪽이 위.
     .sort((a, b) => b.lift - a.lift || b.dfRecent - a.dfRecent);
 
-  const deduped = dropFragments(dropChannelNames(dropSynonyms(scored), recent));
+  // ⚠️ 채널명은 **후보에서 빼지 않는다.** 예전엔 창작자가 제목에 자기 채널명을 넣어
+  //    신조어처럼 보이는 문제(백테스트에서 채널명 "이웃집통통"이 ×48.2 최고 히트) 때문에
+  //    채널명과 겹치는 후보를 버렸다. 그런데 국내 식품 채널명은 대개 **가게 이름**이라,
+  //    그게 곧 발굴 대상이다 — 지우면 트렌드의 실체를 지우게 된다.
+  const deduped = dropFragments(dropSynonyms(scored));
 
   // 식품 맥락은 **소프트 신호** — 후보를 제거하지 않고 순위만 조정한다.
   // 신호 없는 용어(neutral)는 중간에 그대로 남아 신조어가 죽지 않는다.
@@ -567,21 +643,32 @@ export async function POST(request: Request) {
     examples: pickExamples(examples, c.term),
     contextTag: c.contextTag,
     foodShare: c.foodShare,
+    // 참고 지표 — 순위에는 아직 반영하지 않는다 (reactionOf 주석 참고).
+    reaction: reactionOf(docsByTerm.get(c.term) ?? []),
   }));
 
-  // SNS 확산 흐름 — 후보별 예시 2건이 아니라 **최근 영상 전체**(제목 + 설명 앞부분)로
-  // 확산 이유(테마)를 집계한다. 표본이 두꺼워져 테마별 근거 영상 수가 실제 규모를 반영한다.
-  // 시드 간 같은 영상이 겹치면 고유 영상 1건으로만 세도록 ID 기준 중복 제거(ID 없으면
-  // 제목+채널로 폴백)한다 — "근거 영상 수"가 고유 영상 수를 정확히 반영하게.
-  const seenFlow = new Set<string>();
-  const flowTexts: string[] = [];
-  for (const d of R) {
-    const key = d.id || `${d.title} ${d.channelId}`;
-    if (seenFlow.has(key)) continue;
-    seenFlow.add(key);
-    flowTexts.push(`${d.title} ${(d.desc ?? "").slice(0, 200)}`);
-  }
-  const flow = flowTexts.length ? analyzeReasons(flowTexts, locale as ReasonLocale) : undefined;
+  // SNS 확산 흐름 — 추상 이유 태그(맛·식감…)가 아니라 발굴 영상에서 **실제로 함께 등장한
+  // 구체 키워드**를 언급 영상 수 순으로 집계한다. 이유 사전은 영상 제목과 어휘가 안 맞아
+  // 대부분 0건으로 잡혀 흐름이 통째로 비어 보였다. 이미 정제된 후보 용어(withContext:
+  // 채널명·조각 제거, 동의어 병합, 비식품 강등까지 끝난 목록)를 재활용해 노이즈 없이 만든다.
+  const uniqueRecentVideos = new Set(R.map((d) => d.id || `${d.title} ${d.channelId}`)).size;
+  const flowTerms = withContext
+    .filter((c) => c.contextTag !== "nonfood")
+    .slice()
+    .sort(
+      (a, b) => b.videosRecent - a.videosRecent || b.dfRecent - a.dfRecent || b.lift - a.lift,
+    )
+    .slice(0, 10)
+    .map((c) => ({
+      term: c.term,
+      videos: c.videosRecent,
+      channels: c.dfRecent,
+      lift: c.lift,
+      novel: c.novel,
+    }));
+  const flow = flowTerms.length
+    ? { videoCount: uniqueRecentVideos, terms: flowTerms }
+    : undefined;
 
   return NextResponse.json({
     region,

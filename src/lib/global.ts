@@ -1,4 +1,4 @@
-import type { ReasonResult } from "./types";
+import type { CoFlowResult, KeywordReason, ReasonResult } from "./types";
 import type { CoTerm } from "./cooccurrence";
 
 export const GLOBAL_REGIONS: { code: string; label: string; note?: string }[] = [
@@ -26,12 +26,18 @@ export const SEED_PRESETS: Record<string, string[]> = {
   // 특정 트렌드(과일+매운맛 등)를 미리 고르지 않고, "지금 뜨는 음식"을 넓게 검색해
   // 그 제목에서 최근 급확산 단어(lift)를 엔진이 알아서 뽑게 한다. 여러 각도(시의성·
   // 바이럴·플랫폼·레시피·추천)로 섞어 코퍼스 편향을 줄인다.
+  // ⚠️ 카테고리를 **디저트·간식·음료로 좁혔다.** 예전 시드("viral food", "food trend 2026")는
+  //    범용이라 유튜브 최신 업로드 풀에서 물량이 압도적인 남아시아 채널을 대량으로 끌어왔고,
+  //    상위 후보가 janmashtami·paratha·biryani 로 채워졌다. 실측 비교(같은 날·US):
+  //      범용 시드  → 상위 20 중 인도 콘텐츠 다수, 조합 트렌드는 2위권
+  //      좁힌 시드  → 상위 5개가 전부 "croissant × magnum" 한 트렌드(41채널 확산)
+  //    의도어(viral/new/trending)는 유지해야 한다 — order=date 라 없으면 신규 업로드가 무작위다.
   en: [
-    "food trend 2026", // 시의성 — "올해 뜰 음식" 영상에서 신규어가 명명됨
-    "viral food", // 바이럴 각도
-    "tiktok food trend", // 플랫폼 각도 — 틱톡발 트렌드가 유튜브 컴필로 유입(맛 중립)
-    "trending recipe", // 레시피 각도 — 창작자가 신규 조합을 올림
-    "food you have to try", // 추천 각도 — "꼭 먹어봐야 할" 신규어 등장
+    "viral dessert", // 디저트 — 신조합이 가장 많이 명명되는 카테고리
+    "new snack 2026", // 간식 + 시의성
+    "trending drink", // 음료 각도
+    "bakery trend", // 베이커리 각도
+    "tiktok candy", // 플랫폼 + 과자·캔디 각도
   ],
   zh: ["网红甜点", "爆火零食", "新品烘焙", "美食趋势"],
   ko: ["신상 디저트", "유행 간식", "신제품 베이커리", "먹거리 트렌드"],
@@ -52,6 +58,20 @@ export interface GlobalResult {
   ytError?: string;
   reasons: ReasonResult;
   coTerms: CoTerm[];
+}
+
+/** 후보의 반응 지표 (조회/구독 · 좋아요율 · 댓글율). 표본 없으면 각 항목이 null. */
+export interface DiscoverReaction {
+  /** 조회/구독 비율 중앙값 — 롱폼만. 쇼츠는 비구독자 배포라 따로 본다. */
+  viewPerSubLong: number | null;
+  /** 조회/구독 비율 중앙값 — 쇼츠만. */
+  viewPerSubShort: number | null;
+  /** 좋아요/조회 중앙값. */
+  likeRate: number | null;
+  /** 댓글/조회 중앙값. */
+  commentRate: number | null;
+  /** 비율 계산에 실제로 쓰인 영상 수. 작으면 수치를 믿지 말 것. */
+  sampled: number;
 }
 
 export interface DiscoverCandidate {
@@ -76,6 +96,11 @@ export interface DiscoverCandidate {
   contextTag: "food" | "neutral" | "nonfood";
   /** 이 용어가 등장한 제목 중 식품어를 포함한 비율 (0~1) */
   foodShare: number;
+  /**
+   * 반응 지표 — "이 말이 담긴 영상이 실제로 잘 되나".
+   * ⚠️ 참고용이다. 순위(score)는 여전히 채널 확산(lift) 하나로만 매긴다.
+   */
+  reaction?: DiscoverReaction;
 }
 
 export interface DiscoverResult {
@@ -94,8 +119,14 @@ export interface DiscoverResult {
   quotaUnits: number;
   ytError?: string;
   candidates: DiscoverCandidate[];
-  /** SNS 확산 흐름 — 최근 영상 제목·설명 전체에서 집계한 확산 이유(테마) 분포. */
-  flow?: ReasonResult;
+  /** SNS 확산 흐름 — 발굴 영상에서 실제로 함께 등장한 구체 키워드를 언급 영상 수 순으로 집계. */
+  flow?: CoFlowResult;
+}
+
+export interface KeywordReasonsResult {
+  region: string;
+  quotaUnits: number;
+  keywordReasons: KeywordReason[];
 }
 
 async function post<T>(url: string, body: unknown, fallback: string): Promise<T> {
@@ -126,5 +157,17 @@ export function fetchDiscover(seeds: string[], region: string): Promise<Discover
     "/api/global/discover",
     { seeds, region },
     "해외 발굴에 실패했습니다.",
+  );
+}
+
+/**
+ * 키워드별 확산 이유 — 검색검증된 상위 제품 후보를 넘기면, 각 제품의 인기 영상(order=viewCount)
+ * 댓글에서 이유를 집계해 돌려준다. 발굴과 분리(제품당 search 100 units)돼 있어 상위 몇 개만 호출한다.
+ */
+export function fetchKeywordReasons(terms: string[], region = "KR"): Promise<KeywordReasonsResult> {
+  return post<KeywordReasonsResult>(
+    "/api/keyword-reasons",
+    { terms, region },
+    "키워드별 이유 집계에 실패했습니다.",
   );
 }

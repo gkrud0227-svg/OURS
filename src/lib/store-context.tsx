@@ -11,9 +11,10 @@ import {
 import type {
   Candidate,
   Category,
+  CoFlowResult,
   DiscoverySource,
   Keyword,
-  ReasonResult,
+  KeywordReason,
   Scorecard,
   WeekPoint,
 } from "./types";
@@ -21,7 +22,7 @@ import { seedKeywords } from "./defaults";
 import { fetchDataLab, type DataLabResult } from "./datalab";
 import { fetchInstagram, fetchYouTube } from "./social";
 import { fetchCandidates } from "./discovery";
-import { fetchDiscover, SEED_PRESETS, type DiscoverCandidate } from "./global";
+import { fetchDiscover, fetchKeywordReasons, SEED_PRESETS, type DiscoverCandidate } from "./global";
 import { fetchAutocomplete, type AcCandidate } from "./naver-ac";
 import { fetchShopping, type ShoppingTrend } from "./shopping";
 import { logDiscovery } from "./discovery-log";
@@ -48,6 +49,27 @@ const DEFAULT_SEEDS = [
 ];
 /** 발굴 후 데이터랩·검색량을 조회할 상위 후보 수. */
 const TREND_TOP = 24;
+/** 키워드별 확산 이유를 뽑을 상위 제품 후보 수 (제품당 search 100 units라 소수만). */
+const REASON_KEYWORDS = 6;
+
+/**
+ * 자동 이유 집계에서 제외할 **일반어**. 식품 영상 제목에 흔히 붙어 food-태그를 받지만
+ * 제품이 아니다(궁금한·중독성·기준 등). 사용자가 직접 고르는 건 이 필터를 거치지 않는다.
+ */
+const REASON_STOPWORDS = new Set([
+  "궁금한", "중독성", "기준", "방법", "이거", "최애", "활동", "마지막", "진짜", "요즘",
+  "오늘", "리뷰", "후기", "정도", "그냥", "완전", "대박", "신상", "신상리뷰", "편의점신상",
+  "브이로그", "vlog", "asmr", "먹방", "추천", "종류", "가격", "구성", "일본편의점",
+]);
+
+/** 자동 선정에서 뺄 일반어인가 — 불용어이거나, 한글 활용형(형용사·동사) 어미로 끝나는 짧은 말. */
+function looksGeneric(term: string): boolean {
+  const s = term.trim();
+  if (REASON_STOPWORDS.has(s.toLowerCase())) return true;
+  // 제품명은 대개 명사다. "구운·궁금한·없는·부드러운"처럼 활용형 어미로 끝나는 2~4자 한글은 제외.
+  if (/^[가-힣]{2,4}$/.test(s) && /(한|운|는|던|게|워|와|고)$/.test(s)) return true;
+  return false;
+}
 
 /**
  * 해외 발굴 — 미국(US) 하나. 국내와 달리 **검색 검증 소스가 없다**(데이터랩·검색광고·
@@ -88,7 +110,11 @@ const LU_KEY = "td.lastUpdated.v1";
 // v2: 대시보드·국내 발굴 시드를 8개 공통 세트로 통일(재시드 위해 키 버전 업).
 const SEEDS_KEY = "td.seeds.v2";
 const CAND_KEY = "td.candidates.v1";
-const FLOW_KEY = "td.flow.v1";
+// v2: 흐름을 이유 태그(ReasonResult)→공동 키워드(CoFlowResult)로 교체하며 키 버전 업.
+//     구버전 캐시(카테고리 분포)는 무시하고 다음 발굴에서 새 형태로 다시 채운다.
+const FLOW_KEY = "td.flow.v2";
+// 키워드별 이유(댓글 기반)는 별도 캐시. 키워드 흐름과 나란히 보여준다.
+const KREASON_KEY = "td.keywordReasons.v1";
 const LD_KEY = "td.lastDiscovery.v1";
 // v4: 조합 테마어까지 빼고 완전 중립 발굴 의도어로 교체하며 버전업.
 const OSEEDS_KEY = "td.overseasSeeds.v4";
@@ -122,8 +148,14 @@ interface StoreValue {
   seeds: string[];
   setSeeds: (seeds: string[]) => void;
   candidates: Candidate[];
-  /** SNS 확산 흐름 — 국내 발굴 텍스트에서 집계한 확산 이유(테마) 분포. */
-  flow: ReasonResult | null;
+  /** SNS 확산 흐름 — 국내 발굴 영상에서 실제로 함께 등장한 구체 키워드(언급 영상 수 순). */
+  flow: CoFlowResult | null;
+  /** 키워드별 확산 이유 — 각 후보가 등장한 영상의 시청자 댓글에서 따로 집계한 이유 분포. */
+  keywordReasons: KeywordReason[] | null;
+  /** 사용자가 표에서 특정 키워드의 확산 이유를 요청해 집계 중인 용어 (없으면 null). */
+  reasonLoadingTerm: string | null;
+  /** 표에서 고른 키워드 하나의 확산 이유를 인기 영상 댓글로 집계해 패널 맨 앞에 추가한다. */
+  loadKeywordReason: (term: string) => Promise<void>;
   discovering: boolean;
   lastDiscoveryAt: string | null;
   runDiscovery: (
@@ -153,7 +185,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [refreshing, setRefreshing] = useState(false);
   const [seeds, setSeeds] = useState<string[]>(DEFAULT_SEEDS);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [flow, setFlow] = useState<ReasonResult | null>(null);
+  const [flow, setFlow] = useState<CoFlowResult | null>(null);
+  const [keywordReasons, setKeywordReasons] = useState<KeywordReason[] | null>(null);
+  const [reasonLoadingTerm, setReasonLoadingTerm] = useState<string | null>(null);
   const [discovering, setDiscovering] = useState(false);
   const [lastDiscoveryAt, setLastDiscoveryAt] = useState<string | null>(null);
   const [overseasSeeds, setOverseasSeeds] = useState<string[]>(DEFAULT_OVERSEAS_SEEDS);
@@ -216,7 +250,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (rawCand) setCandidates(JSON.parse(rawCand) as Candidate[]);
         if (rawLd) setLastDiscoveryAt(rawLd);
         const rawFlow = localStorage.getItem(FLOW_KEY);
-        if (rawFlow) setFlow(JSON.parse(rawFlow) as ReasonResult);
+        if (rawFlow) setFlow(JSON.parse(rawFlow) as CoFlowResult);
+        const rawKReason = localStorage.getItem(KREASON_KEY);
+        if (rawKReason) setKeywordReasons(JSON.parse(rawKReason) as KeywordReason[]);
         const rawOCand = localStorage.getItem(OCAND_KEY);
         if (rawOCand) setOverseasCandidates(JSON.parse(rawOCand) as DiscoverCandidate[]);
       } catch {
@@ -257,6 +293,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hydrated && flow) localStorage.setItem(FLOW_KEY, JSON.stringify(flow));
   }, [flow, hydrated]);
+  useEffect(() => {
+    if (hydrated && keywordReasons)
+      localStorage.setItem(KREASON_KEY, JSON.stringify(keywordReasons));
+  }, [keywordReasons, hydrated]);
   useEffect(() => {
     if (hydrated && lastDiscoveryAt) localStorage.setItem(LD_KEY, lastDiscoveryAt);
   }, [lastDiscoveryAt, hydrated]);
@@ -495,8 +535,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // ① 유튜브 콘텐츠 신조어(단일 토큰).
       const disc = krSettled?.status === "fulfilled" ? krSettled.value : null;
 
-      // SNS 확산 흐름 — 서버가 최근 영상 전체(제목+설명)로 집계한 확산 이유(테마) 분포.
-      // 개별 제품이 아니라 "지금 어떤 이유(맛·식감·희소성·비주얼·계절)로 퍼지는지"의 큰 흐름.
+      // SNS 확산 흐름 — 서버가 발굴 영상에서 실제로 함께 등장한 구체 키워드를 언급 영상 수
+      // 순으로 집계한 목록. "지금 무엇이 함께 퍼지는가"를 추상 태그가 아닌 실제 단어로 보여준다.
       if (disc?.flow) setFlow(disc.flow);
 
       const yt = disc
@@ -513,10 +553,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         : [];
 
       // 자동완성 시드 = 유튜브가 발굴한 키워드. 유튜브가 못 잡으면 자동완성도 안 돈다.
+      // ⚠️ 시드 품질이 곧 결과 품질이다 — 총칭어("아이돌간식")나 비식품 후보를 시드로 주면
+      //    자동완성이 그 총칭어의 변주("코스트코 아이들 간식")를 잔뜩 만들어 노이즈가 **증폭**된다.
+      //    그래서 식품 맥락 후보만 시드로 쓰고, 식품 후보가 없으면 비식품만 뺀 풀로 폴백한다.
+      const acSeedPool = yt.filter((c) => c.contextTag === "food");
+      const acSeeds = (acSeedPool.length ? acSeedPool : yt.filter((c) => c.contextTag !== "nonfood"))
+        .map((c) => c.term);
       let acCands: AcCandidate[] = [];
-      if (yt.length) {
+      if (acSeeds.length) {
         try {
-          acCands = (await fetchAutocomplete(yt.map((c) => c.term))).candidates.slice(0, 12);
+          acCands = (await fetchAutocomplete(acSeeds)).candidates.slice(0, 12);
         } catch {
           // 자동완성 실패해도 유튜브 후보로 진행
         }
@@ -637,6 +683,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         .sort((a, b) => b.score - a.score);
       setCandidates(scored);
 
+      // 키워드별 확산 이유 — **상위 제품 후보**를 골라, 각 제품의 인기 영상(order=viewCount)
+      // 댓글에서 이유를 따로 집계한다. 인기 영상이라 댓글 표본이 두껍다(제품별 수백 개).
+      // 선정: 검색 급상승(score)만으론 "택배없는날·드라마 제목" 같은 비식품이 섞이므로,
+      // **식품 맥락(contextTag==="food")** 후보를 우선한다. 식품 후보가 적으면 비식품만 뺀 풀로
+      // 폴백. 발굴과 분리된 호출이라 실패해도 발굴 결과엔 영향 없다.
+      const foodCands = scored.filter((c) => c.contextTag === "food");
+      const reasonPool = foodCands.length >= 3 ? foodCands : scored.filter((c) => c.contextTag !== "nonfood");
+      const reasonTerms = reasonPool
+        .filter((c) => c.name.trim().length >= 2 && !looksGeneric(c.name))
+        .slice(0, REASON_KEYWORDS)
+        .map((c) => c.name);
+      if (reasonTerms.length) {
+        try {
+          const kr = await fetchKeywordReasons(reasonTerms, "KR");
+          setKeywordReasons(kr.keywordReasons);
+        } catch {
+          // 이유 집계 실패는 무시 — 발굴 결과는 그대로 둔다.
+        }
+      }
+
       // 전향적 발굴 로그 — 최초 등장 후보를 출처·초기신호와 함께 서버에 남긴다(fire-and-forget).
       void logDiscovery(
         scored.map((c) => ({
@@ -664,6 +730,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setDiscovering(false);
     }
   }, [seeds, overseasSeeds]);
+
+  // 표에서 고른 키워드 하나의 확산 이유를 인기 영상 댓글로 집계해 패널 맨 앞에 얹는다.
+  // 같은 용어가 이미 있으면 새 결과로 교체한다. 사용자 선택이라 불용어 필터를 거치지 않는다.
+  const loadKeywordReason = useCallback(async (term: string) => {
+    const t = term.trim();
+    if (!t) return;
+    setReasonLoadingTerm(t);
+    try {
+      const res = await fetchKeywordReasons([t], "KR");
+      const got = res.keywordReasons?.[0];
+      if (got) {
+        setKeywordReasons((prev) => [got, ...(prev ?? []).filter((k) => k.term !== got.term)]);
+      }
+    } catch {
+      // 단건 이유 집계 실패는 무시 — 기존 패널은 그대로 둔다.
+    } finally {
+      setReasonLoadingTerm(null);
+    }
+  }, []);
 
   const saveCandidate = useCallback(
     (candidate: Candidate, category: Category) => {
@@ -708,6 +793,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setSeeds,
       candidates,
       flow,
+      keywordReasons,
+      reasonLoadingTerm,
+      loadKeywordReason,
       discovering,
       lastDiscoveryAt,
       runDiscovery,
@@ -735,6 +823,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       seeds,
       candidates,
       flow,
+      keywordReasons,
+      reasonLoadingTerm,
+      loadKeywordReason,
       discovering,
       lastDiscoveryAt,
       runDiscovery,

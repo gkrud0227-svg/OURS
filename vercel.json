@@ -5,7 +5,7 @@
       "schedule": "0 13 * * *"
     },
     {
-      "path": "/api/food-news",
+      "path": "/api/food-news?region=overseas",
       "schedule": "7 23 * * *"
     }
   ]

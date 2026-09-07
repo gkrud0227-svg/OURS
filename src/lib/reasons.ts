@@ -14,9 +14,11 @@ export const REASON_DICT: { key: string; label: string; words: string[] }[] = [
   {
     key: "taste",
     label: "맛 궁합",
+    // ⚠️ 일반 칭찬어(맛있·존맛·꿀맛)는 넣지 않는다. 거의 모든 음식 댓글에 붙어 "맛 궁합"을
+    //    항상 1위로 부풀리고, 정작 "왜"를 말하지 않는다. 구체적 맛 묘사·궁합어만 남긴다.
     words: [
       "고소", "달콤", "달달", "짭짤", "짭조름", "단짠", "새콤", "꿀조합",
-      "꿀맛", "존맛", "맛있", "어울리", "밸런스",
+      "어울리", "밸런스",
     ],
   },
   {
@@ -61,9 +63,10 @@ export const REASON_DICT_EN: { key: string; label: string; words: string[] }[] =
   {
     key: "taste",
     label: "맛 궁합",
+    // 일반 칭찬어(delicious·tasty·yummy)는 "왜"를 안 말하고 taste만 부풀려 제외.
     words: [
       "savory", "sweet", "salty", "umami", "buttery", "nutty", "rich",
-      "delicious", "tasty", "yummy", "flavor", "flavour", "balance", "pairing",
+      "flavor", "flavour", "balance", "pairing",
     ],
   },
   {
@@ -109,8 +112,9 @@ export const REASON_DICT_ZH: { key: string; label: string; words: string[] }[] =
   {
     key: "taste",
     label: "맛 궁합",
+    // 일반 칭찬어(好吃·美味)는 "왜"를 안 말하고 taste만 부풀려 제외.
     words: [
-      "好吃", "美味", "香甜", "香浓", "香濃", "浓郁", "濃郁", "奶香",
+      "香甜", "香浓", "香濃", "浓郁", "濃郁", "奶香",
       "甜咸", "甜鹹", "爆汁", "搭配", "绝配", "絕配", "回甘",
     ],
   },

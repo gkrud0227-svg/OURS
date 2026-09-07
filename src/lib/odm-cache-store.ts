@@ -3,9 +3,9 @@ import { join, dirname } from "node:path";
 import { getSupabaseAdmin } from "./supabase";
 
 /**
- * ODM 거래처 카탈로그 캐시 저장소 — Supabase(odm_cache) 또는 로컬 파일(data/odm-cache.json).
+ * 제조처 카탈로그 캐시 저장소 — Supabase(odm_cache) 또는 로컬 파일(data/odm-cache.json).
  *
- * 매일 크론(/api/odm-cron)이 식약처에서 받아 갱신하고, ODM 라우트가 제한 시간대에 이걸로 응답한다.
+ * 매일 크론(/api/odm-cron)이 식약처에서 받아 갱신하고, 제조처 라우트가 제한 시간대에 이걸로 응답한다.
  * Supabase 미설정이면 파일로 폴백(기존 scripts/fetch-odm-cache.mjs 와 같은 구조).
  */
 

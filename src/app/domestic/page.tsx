@@ -8,9 +8,10 @@ import { shopGrade, SHOP_META, type ShoppingTrend } from "@/lib/shopping";
 import { trendFromWeeks, gateByLevel, STATUS_META, type TrendStatus } from "@/lib/trend";
 import { MIN_DOC_HITS } from "@/lib/reasons";
 import type { WeekPoint } from "@/lib/types";
-import { estimateUnits, quotaLine, addQuota } from "@/lib/quota";
+import { estimateUnits, quotaLine, addQuota, YT_KEYWORD_REASON_PER_KEYWORD } from "@/lib/quota";
 import { QuotaBadge } from "@/components/QuotaBadge";
 import { FlowPanel } from "@/components/FlowPanel";
+import { KeywordReasonsPanel } from "@/components/KeywordReasonsPanel";
 
 /** 이 후보를 떠올린 발굴 소스. */
 type Source = "youtube" | "search" | "both";
@@ -119,10 +120,10 @@ const STATUS_TONE: Record<TrendStatus, string> = {
 };
 
 /**
- * 발굴한 키워드에서 바로 ODM 스크리닝으로 넘어가는 링크.
+ * 발굴한 키워드에서 바로 제조처 스크리닝으로 넘어가는 링크.
  *
  * 품목제조보고는 공식 분류명으로만 검색되므로 키워드에서 품목유형을 추정해 넘긴다.
- * 추정이 안 되면(예: "탕후루") 유형 없이 보내 ODM 화면에서 직접 고르게 한다.
+ * 추정이 안 되면(예: "탕후루") 유형 없이 보내 제조처 화면에서 직접 고르게 한다.
  */
 function OdmLink({ term }: { term: string }) {
   const type = guessFoodType(term);
@@ -135,11 +136,11 @@ function OdmLink({ term }: { term: string }) {
       title={
         type
           ? `"${term}" → ${type} 제조 이력이 있는 업체를 찾습니다`
-          : `"${term}" 는 품목유형을 자동 판단하지 못했습니다. ODM 화면에서 유형을 골라주세요.`
+          : `"${term}" 는 품목유형을 자동 판단하지 못했습니다. 제조처 화면에서 유형을 골라주세요.`
       }
       className="inline-flex items-center gap-1 whitespace-nowrap rounded-[9px] border border-line px-2.5 py-1.5 text-xs font-semibold text-muted-strong transition-colors hover:border-accent-bright hover:bg-accent-soft hover:text-accent"
     >
-      ODM 스크리닝
+      제조처 스크리닝
       {type && <span className="font-normal text-muted">· {type}</span>}
     </Link>
   );
@@ -149,7 +150,24 @@ export default function DomesticPage() {
   // 발굴은 store 한 곳(candidates)에 담긴다 → 대시보드와 국내 발굴이 같은 데이터를 공유하고,
   // localStorage 에 영속되므로 탭 이동·새로고침에도 유지된다.
   // 단, 이 탭은 **국내(KR)만** 발굴한다(scope="domestic"). 해외는 해외 트렌드 탭, 홈은 국내+해외.
-  const { candidates, flow, discovering, lastDiscoveryAt, runDiscovery, seeds } = useStore();
+  const {
+    candidates,
+    flow,
+    keywordReasons,
+    reasonLoadingTerm,
+    loadKeywordReason,
+    discovering,
+    lastDiscoveryAt,
+    runDiscovery,
+    seeds,
+  } = useStore();
+
+  // 표에서 키워드를 누르면 그 제품의 인기 영상 댓글로 확산 이유를 집계해 위 패널에 얹는다.
+  function showReason(term: string) {
+    addQuota(YT_KEYWORD_REASON_PER_KEYWORD);
+    void loadKeywordReason(term);
+    document.getElementById("reason-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   const [seedText, setSeedText] = useState(seeds.join(", "));
   const [error, setError] = useState<string | null>(null);
 
@@ -238,7 +256,7 @@ export default function DomesticPage() {
           <button
             type="submit"
             disabled={discovering}
-            title="유튜브 API 쿼터를 사용합니다 (시드 1개당 약 500 units)"
+            title="유튜브 API 쿼터를 사용합니다 (시드 1개당 약 900 units)"
             style={{ background: "linear-gradient(145deg,#5a9b12,#4e8b10)" }}
             className="flex h-10 items-center gap-2 rounded-[10px] px-5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
           >
@@ -273,7 +291,10 @@ export default function DomesticPage() {
         )
       ) : (
         <>
-          <FlowPanel flow={flow} />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <FlowPanel flow={flow} />
+            <KeywordReasonsPanel keywordReasons={keywordReasons} loadingTerm={reasonLoadingTerm} />
+          </div>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Kpi label="이중 확인 후보" value={String(doubleCount)} sub="콘텐츠 신조어 + 검색 상승" emphasis />
             <Kpi label="발굴 후보" value={String(rows.length)} sub="유튜브 + 검색 자동완성 합산" />
@@ -337,6 +358,17 @@ export default function DomesticPage() {
                               신규 등장
                             </span>
                           )}
+                          <div className="mt-1.5">
+                            <button
+                              type="button"
+                              onClick={() => showReason(r.term)}
+                              disabled={reasonLoadingTerm === r.term}
+                              title={`"${r.term}"의 인기 영상 댓글에서 확산 이유를 집계합니다 (약 ${YT_KEYWORD_REASON_PER_KEYWORD} units)`}
+                              className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-[3px] text-[11px] font-semibold text-muted-strong transition-colors hover:border-accent-bright hover:bg-accent-soft hover:text-accent disabled:opacity-60"
+                            >
+                              {reasonLoadingTerm === r.term ? "집계 중…" : "확산이유 ▸"}
+                            </button>
+                          </div>
                         </td>
                         <td className={`py-3 text-[13px] ${STATUS_TONE[r.searchStatus]}`}>
                           {r.hasSearch ? (
