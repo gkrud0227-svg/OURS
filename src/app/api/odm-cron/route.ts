@@ -1,5 +1,15 @@
 import { NextResponse } from "next/server";
-import { KNOWN_PARTNERS } from "@/lib/odm";
+import { KNOWN_PARTNERS, PARTNER_ALIASES } from "@/lib/odm";
+import {
+  fetchDeltaDay,
+  groupByPartner,
+  mergeRows,
+  kstYmd,
+  nextYmd,
+  MAX_CATCHUP_DAYS,
+  type DeltaRow,
+} from "@/lib/odm-delta";
+import { readState, writeState } from "@/lib/app-state-store";
 import { writeOdmCache, readOdmCacheMap, type OdmCacheEntry } from "@/lib/odm-cache-store";
 
 /**
@@ -36,6 +46,11 @@ export const maxDuration = 60; // Hobby 플랜 상한(60초). Pro면 300까지 �
  * 어디까지 했는지 응답으로 남기게 한다. 강제 종료되면 진행 상황을 알 수 없다.
  */
 const TIME_BUDGET_MS = 50_000;
+/**
+ * 그중 변경분(1단계)에 쓸 몫. 나머지는 아직 한 번도 못 받은 거래처 채우기(2단계)에 남긴다.
+ * 1000행씩 받으므로 하루치가 2회 호출(약 13초)이면 끝난다 — 35초면 이틀치까지 따라잡는다.
+ */
+const DELTA_BUDGET_MS = 35_000;
 
 interface RawRow {
   BSSH_NM?: string;
@@ -145,8 +160,70 @@ export async function GET(request: Request) {
   const done: string[] = [];
   const failed: string[] = [];
 
-  // 갱신이 가장 오래된 거래처부터. 캐시에 없는 곳(한 번도 못 받은 곳)이 가장 먼저 온다.
   const cache = await readOdmCacheMap().catch(() => ({} as Record<string, OdmCacheEntry>));
+
+  // ── 1단계: 일일 변경분(CHNG_DT) ────────────────────────────────────────────
+  // 업체별 전체 조회는 시간당 한도(100회)에 걸려 한 바퀴에 2주가 걸린다. 변경분 조회는
+  // 그 한도에서 빠지고 하루치가 1,300~2,400건이라, 이걸로 64곳을 한 번에 최신화한다.
+  const deltaDeadline = startedAt + DELTA_BUDGET_MS;
+  const state = (await readState<{ lastDate?: string }>("odm_delta").catch(() => null)) ?? null;
+  const today = kstYmd();
+  // 마지막으로 처리한 다음 날부터 오늘까지. 이력이 없으면 어제·오늘만 본다.
+  const dates: string[] = [];
+  let cursor = state?.lastDate ? nextYmd(state.lastDate) : kstYmd(-1);
+  for (let i = 0; i < MAX_CATCHUP_DAYS && cursor <= today; i += 1) {
+    dates.push(cursor);
+    cursor = nextYmd(cursor);
+  }
+
+  const delta = {
+    dates,
+    rows: 0,
+    partners: 0,
+    added: 0,
+    updated: 0,
+    lastDate: state?.lastDate ?? null,
+    blocked: false,
+  };
+  for (const date of dates) {
+    if (Date.now() > deltaDeadline) break;
+    const day = await fetchDeltaDay(key, date, deltaDeadline);
+    if (day.blocked) {
+      delta.blocked = true;
+      break; // 막힌 날은 lastDate 를 올리지 않는다 — 다음 실행이 다시 시도한다.
+    }
+    if (!day.complete) break; // 반쪽만 받은 날을 처리했다고 표시하면 나머지를 영영 놓친다.
+    delta.rows += day.rows.length;
+
+    const grouped = groupByPartner(day.rows, KNOWN_PARTNERS, PARTNER_ALIASES);
+    const patch: Record<string, OdmCacheEntry> = {};
+    for (const [company, incoming] of grouped) {
+      const prev = cache[company];
+      // 아직 한 번도 못 받은 곳은 변경분만으로 채우지 않는다 — 그 업체 전체가 아니라
+      // "오늘 바뀐 것"뿐이라 반쪽짜리 카탈로그가 된다. 2단계 전체 조회에 맡긴다.
+      if (!prev?.rows?.length) continue;
+      const m = mergeRows(prev.rows as DeltaRow[], incoming);
+      patch[company] = {
+        ...prev,
+        rows: m.rows,
+        total: Math.max(prev.total ?? 0, m.rows.length),
+        fetchedAt: at,
+      };
+      delta.added += m.added;
+      delta.updated += m.updated;
+    }
+    if (Object.keys(patch).length) {
+      await writeOdmCache(patch);
+      Object.assign(cache, patch);
+      delta.partners += Object.keys(patch).length;
+    }
+    delta.lastDate = date;
+  }
+  if (delta.lastDate && delta.lastDate !== state?.lastDate) {
+    await writeState("odm_delta", { lastDate: delta.lastDate }).catch(() => {});
+  }
+
+  // 갱신이 가장 오래된 거래처부터. 캐시에 없는 곳(한 번도 못 받은 곳)이 가장 먼저 온다.
   const staleness = (c: string) => {
     const t = cache[c]?.fetchedAt;
     return t ? Date.parse(t) || 0 : 0; // 없으면 0 = 가장 오래됨
@@ -175,6 +252,9 @@ export async function GET(request: Request) {
           ok: false,
           at,
           restricted: true,
+          // 2단계가 막혀도 1단계 변경분은 이미 저장됐다 — 결과를 같이 실어야
+          // "오늘 갱신이 됐는지"를 응답만 보고 알 수 있다.
+          delta,
           error:
             "식품안전나라 조회가 막혔습니다 — 제한 시간대(09~19시 KST)이거나 시간당 호출 한도(100회)에 걸렸습니다. 한 시간 뒤 또는 19시 이후에 다시 실행하세요.",
           elapsedMs: Date.now() - startedAt,
@@ -192,6 +272,8 @@ export async function GET(request: Request) {
     at,
     elapsedMs: Date.now() - startedAt,
     partners: KNOWN_PARTNERS.length,
+    // 1단계 변경분 결과 — 이게 매일 도는 본체다. 2단계(done/failed)는 미수집분 채우기.
+    delta,
     // 한 바퀴 진행률 — 캐시에 한 번이라도 담긴 거래처 수.
     cached: covered.length,
     updated: done.length,

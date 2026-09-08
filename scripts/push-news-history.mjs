@@ -14,7 +14,7 @@ const region = process.argv.find((a) => !a.startsWith("-") && a !== process.argv
 const apply = process.argv.includes("--apply");
 
 for (const line of readFileSync(join(process.cwd(), ".env.local"), "utf8").split(/\r?\n/)) {
-  const m = /^([A-Z0-9_]+)=(.*)$/.exec(line.trim());
+  const m = /^([A-Z0-9_]+)\s*=\s*(.*)$/.exec(line.trim());
   if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
 }
 
