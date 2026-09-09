@@ -955,8 +955,8 @@ export default function DiscoveryDashboard() {
       {/* SAVED CANDIDATES */}
       <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-baseline gap-2.5">
-          <h2 className="text-lg font-extrabold tracking-tight">저장한 후보</h2>
-          <span className="text-sm font-bold text-muted">{watchlist.length}개</span>
+          <h2 className="text-[24px] font-black tracking-[-0.02em] text-ink">저장한 후보</h2>
+          <span className="text-[12px] font-bold text-ink-3">{watchlist.length}개</span>
         </div>
         <div className="flex items-center gap-2.5">
           <span className="hidden text-[11.5px] text-muted sm:inline">
@@ -1217,17 +1217,15 @@ function OverseasSection({
 
   return (
     <div className="mb-11">
-      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-extrabold tracking-tight">해외 트렌드 랭킹</h2>
-          <span className="rounded-[3px] bg-[#E9E3D2] px-2 py-[3px] text-[11px] font-bold text-[#4A463C]">
-            {OVERSEAS_REGIONS.join("·")}
+      {/* 제목·부제 규격은 국내 트렌드 랭킹과 같다 — 두 랭킹이 한 화면에서 같은 무게로 읽혀야 한다. */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-baseline gap-3">
+          <h2 className="text-[24px] font-black tracking-[-0.02em] text-ink">해외 트렌드 랭킹</h2>
+          <span className="text-[12px] font-bold text-ink-3">
+            {OVERSEAS_REGIONS.join("·")} · 콘텐츠 급상승
+            {candidates.length > 0 &&
+              ` · 후보 ${candidates.length}개 · 신조어 ${novelCount}개`}
           </span>
-          {candidates.length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-[3px] bg-rise px-2.5 py-1 text-xs font-semibold text-ink">
-              후보 {candidates.length}개 · 신조어 {novelCount}개
-            </span>
-          )}
         </div>
         <span
           className="cursor-help text-[12px] text-muted"
