@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store-context";
 import { shopGrade, SHOP_META, type ShoppingTrend } from "@/lib/shopping";
 import { trendFromWeeks, gateByLevel, STATUS_META, type TrendStatus } from "@/lib/trend";
@@ -188,6 +188,42 @@ export default function DomesticPage() {
       );
   }, [candidates]);
 
+  /*
+   * 순위 + 티어 밴드 — 홈 랭킹과 같은 읽는 법을 쓴다.
+   *
+   * ⚠️ 순위는 위 rows 정렬(결합 발굴 점수) 그대로다. 티어는 새 문턱을 만들지 않고 기존
+   *    검색 판정(searchStatus)을 묶은 것이다 — 급상승 = 크림, 상승 = 우선, 나머지 = 침전.
+   * ⚠️ 정렬 기준(결합 점수)과 티어 기준(검색 판정)이 달라서 **밴드 안의 순위가 띄엄띄엄**
+   *    보일 수 있다. 콘텐츠 근거가 두꺼워 점수는 높은데 검색은 아직 안 오른 후보가 그렇다.
+   *    이건 데이터가 맞는 것이고, 순위를 티어에 맞춰 다시 매기면 "몇 번째 후보인가"라는
+   *    질문의 답이 화면마다 달라진다.
+   */
+  const ranked = useMemo(() => {
+    const tierOf = (r: Row) =>
+      r.searchStatus === "surge" ? 1 : r.searchStatus === "up" ? 2 : (3 as 1 | 2 | 3);
+    const LABEL = {
+      1: "TIER 1 · 크림 — 급상승",
+      2: "TIER 2 · 우선 — 상승세",
+      3: "TIER 3 · 침전 — 유지·하락",
+    } as const;
+    const counts = { 1: 0, 2: 0, 3: 0 };
+    for (const r of rows) counts[tierOf(r)] += 1;
+    // 밴드는 티어가 바뀌는 첫 행에만 붙인다. rows 는 이미 티어끼리 뭉쳐 있지 않으므로
+    // 티어 순으로 재배열한 뒤 전체 순위(rank)는 원래 정렬 순서를 유지한다.
+    const withRank = rows.map((r, i) => ({ ...r, rank: i + 1, tier: tierOf(r) }));
+    const ordered = [1, 2, 3].flatMap((t) => withRank.filter((r) => r.tier === t));
+    let prev = 0;
+    return ordered.map((r) => {
+      const first = r.tier !== prev;
+      prev = r.tier;
+      return {
+        ...r,
+        bandLabel: first ? LABEL[r.tier] : null,
+        bandCount: counts[r.tier],
+      };
+    });
+  }, [rows]);
+
   async function run(e: React.FormEvent) {
     e.preventDefault();
     const list = seedText.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 8);
@@ -315,22 +351,71 @@ export default function DomesticPage() {
             <div className="nt-scroll overflow-x-auto">
               <table className="w-full min-w-[720px] border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-line text-left text-xs text-muted">
-                    <th className="py-2.5 font-semibold">후보 키워드</th>
-                    <th className="py-2.5 font-semibold">검색 검증 (데이터랩)</th>
-                    <th className="py-2.5 font-semibold">구매 의향 (쇼핑)</th>
-                    <th className="py-2.5 text-center font-semibold">종합</th>
+                  <tr className="bg-ink text-left">
+                    <th className="cb-th w-14 whitespace-nowrap px-3 py-[9px]">#</th>
+                    <th className="cb-th whitespace-nowrap px-3 py-[9px]">후보 키워드</th>
+                    <th className="cb-th whitespace-nowrap px-3 py-[9px]">검색 검증 (데이터랩)</th>
+                    <th className="cb-th whitespace-nowrap px-3 py-[9px]">구매 의향 (쇼핑)</th>
+                    <th className="cb-th whitespace-nowrap px-3 py-[9px] text-center">종합</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => {
+                  {ranked.map((r) => {
                     const v = verdictOf(r);
                     const vm = VERDICT_META[v];
                     const sm = STATUS_META[r.searchStatus];
                     return (
-                      <tr key={r.term} className="border-b border-[#E9E3D2] last:border-0">
+                      <Fragment key={r.term}>
+                        {r.bandLabel && (
+                          <tr>
+                            <td colSpan={5} className="p-0">
+                              <div
+                                className={`flex items-center gap-[9px] border-y-[1.5px] border-ink px-3 py-[7px] ${
+                                  r.tier === 1
+                                    ? "bg-rise"
+                                    : r.tier === 2
+                                      ? "bg-mutedbg"
+                                      : "bg-band3"
+                                }`}
+                              >
+                                <span className={`cb-tier ${r.tier === 3 ? "text-ink-3" : "text-ink"}`}>
+                                  {r.bandLabel}
+                                </span>
+                                <span
+                                  className={`text-[12px] font-semibold ${
+                                    r.tier === 1
+                                      ? "text-rise-ink"
+                                      : r.tier === 2
+                                        ? "text-ink-3"
+                                        : "text-ink-4"
+                                  }`}
+                                >
+                                  {r.bandCount}건
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      <tr className="border-b border-hair last:border-0">
+                        <td className="py-3 pl-3 pr-2 align-top">
+                          <span
+                            className={`cb-num ${
+                              r.tier === 1 ? "text-[17px] text-ink" : "text-[14px] !font-extrabold text-ink-3"
+                            }`}
+                          >
+                            {String(r.rank).padStart(2, "0")}
+                          </span>
+                        </td>
                         <td className="py-3 pr-2">
-                          <span className="font-semibold text-accent-ink">{r.term}</span>
+                          <span
+                            className={
+                              r.tier === 1
+                                ? "text-[17px] font-black tracking-[-0.02em] text-ink"
+                                : "text-[14px] font-extrabold text-ink"
+                            }
+                          >
+                            {r.term}
+                          </span>
                           <span className={`ml-2 rounded-[3px] px-2 py-[2px] text-[10.5px] font-bold ${SOURCE_META[r.source].cls}`}>
                             {SOURCE_META[r.source].label}
                           </span>
@@ -391,6 +476,7 @@ export default function DomesticPage() {
                           </span>
                         </td>
                       </tr>
+                      </Fragment>
                     );
                   })}
                 </tbody>
