@@ -248,7 +248,7 @@ export default function OdmPage() {
       {fromTerm && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[4px] border-[1.5px] border-ink bg-surface px-4 py-3 text-sm text-ink">
           <Link href="/domestic" className="font-semibold underline underline-offset-2">
-            국내 발굴
+            국내 트렌드
           </Link>
           <span className="text-muted-strong">에서</span>
           <b className="font-bold">&ldquo;{fromTerm}&rdquo;</b>

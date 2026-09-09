@@ -760,7 +760,7 @@ export default function DiscoveryDashboard() {
       {/* RANKING HEADER */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-baseline gap-3">
-          <h2 className="text-[24px] font-black tracking-[-0.02em] text-ink">국내 발굴 랭킹</h2>
+          <h2 className="text-[24px] font-black tracking-[-0.02em] text-ink">국내 트렌드 랭킹</h2>
           <span className="text-[12px] font-bold text-ink-3">
             유튜브 발굴 · 검색 검증 · 후보 {enriched.length}개
           </span>
@@ -1219,7 +1219,7 @@ function OverseasSection({
     <div className="mb-11">
       <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-extrabold tracking-tight">해외 발굴 랭킹</h2>
+          <h2 className="text-lg font-extrabold tracking-tight">해외 트렌드 랭킹</h2>
           <span className="rounded-[3px] bg-[#E9E3D2] px-2 py-[3px] text-[11px] font-bold text-[#4A463C]">
             {OVERSEAS_REGIONS.join("·")}
           </span>
@@ -1285,7 +1285,7 @@ function OverseasSection({
       <div className="overflow-hidden rounded-[5px] border-2 border-ink">
         {candidates.length === 0 ? (
           <EmptyBlock
-            title="아직 해외 발굴 결과가 없습니다"
+            title="아직 해외 트렌드 결과가 없습니다"
             desc="위의 발굴 실행을 누르면 국내와 함께 미국(US) 콘텐츠 급상승 키워드가 채워집니다."
           />
         ) : (
