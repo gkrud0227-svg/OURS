@@ -144,10 +144,8 @@ export async function fetchDeltaDay(
   const cap = Math.min(total, MAX_ROWS_PER_DAY);
   const rows = [...first.rows];
 
-  // 나머지 페이지를 소량 병렬로 받는다.
-  // ⚠️ 순차로 받으면 하루치 1,292건(13페이지)에 26초가 걸려 예산(25초)을 넘긴다 — 실측으로
-  //    확인했다. 그러면 complete=false 가 되어 그날을 처리 못 한 것으로 남기고, 다음 날도
-  //    같은 자리에서 막힌다. 반대로 전부 병렬로 던지면 식약처가 빈 응답을 준다.
+  // 남은 페이지(1000행 단위라 보통 한 장)를 받는다.
+  // 워커 구조를 남겨둔 건 하루치가 폭증했을 때 PAGE_CONCURRENCY 만 올리면 되게 하려는 것이다.
   const ranges: Array<[number, number]> = [];
   for (let start = CHUNK + 1; start <= cap; start += CHUNK) {
     ranges.push([start, Math.min(start + CHUNK - 1, cap)]);

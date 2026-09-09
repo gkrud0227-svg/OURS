@@ -159,6 +159,8 @@ export async function GET(request: Request) {
   const at = new Date().toISOString();
   const done: string[] = [];
   const failed: string[] = [];
+  /** 상호로는 0건이라 별칭으로 잡은 거래처 — 목록을 고칠 근거가 된다. */
+  const usedAlias: string[] = [];
 
   const cache = await readOdmCacheMap().catch(() => ({} as Record<string, OdmCacheEntry>));
 
@@ -239,7 +241,21 @@ export async function GET(request: Request) {
       break;
     }
     try {
-      const entry = await fetchCompany(key, company);
+      // 등록명이 달라 상호로는 0건인 곳이 있다 — 별칭을 차례로 시도한다.
+      // ⚠️ 별칭을 변경분 매칭에만 쓰고 여기 안 쓰면 그 거래처는 **영영 안 채워진다**:
+      //    변경분 단계는 이미 캐시가 있는 곳만 갱신하므로, 최초 수집은 오직 여기서만 일어난다.
+      let entry = await fetchCompany(key, company);
+      if ((entry.rows?.length ?? 0) === 0) {
+        for (const alias of PARTNER_ALIASES[company] ?? []) {
+          if (alias === company) continue;
+          const alt = await fetchCompany(key, alias);
+          if ((alt.rows?.length ?? 0) > 0) {
+            entry = alt;
+            usedAlias.push(`${company}→${alias}`);
+            break;
+          }
+        }
+      }
       if ((entry.rows?.length ?? 0) > 0) {
         await writeOdmCache({ [company]: entry });
         done.push(`${company}:${entry.total}건`);
@@ -279,6 +295,7 @@ export async function GET(request: Request) {
     updated: done.length,
     done,
     failed,
+    usedAlias,
     // 예산이 다해 멈췄다면 다음 실행이 여기서부터 이어받는다.
     ...(stoppedFor ? { stoppedBudgetAt: stoppedFor } : {}),
   });
