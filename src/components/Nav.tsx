@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { CreamMark } from "./CreamMark";
 import { usePathname } from "next/navigation";
 
 /**
@@ -13,11 +12,13 @@ const LINKS = [
   { href: "/", label: "홈" },
   { href: "/domestic", label: "국내 트렌드" },
   { href: "/global", label: "해외 트렌드" },
-  { href: "/label", label: "발굴 라벨링" },
   { href: "/odm", label: "제조처 스크리닝" },
 ];
 
-// 숨김(코드 보존 — /radar, /backtest, /keywords, /instagram, /scorecard 로 직접 접근 가능):
+// 숨김(코드 보존 — /label, /radar, /backtest, /keywords, /instagram, /scorecard 로 직접 접근 가능):
+// { href: "/label", label: "발굴 라벨링" },
+//   라벨 데이터가 쌓이기 전까지 탭에서 감춘다. 화면·라우트·API 는 그대로 살아 있고
+//   /label 로 직접 열린다. 발굴 결과 저장(discovery label)도 계속 동작한다.
 // { href: "/radar", label: "식품 뉴스 스캔" },
 //   ⚠️ 라우트는 살아 있어야 한다. 해외 트렌드 랭킹이 같은 소스(/api/food-news)를
 //      내부적으로 불러 "뉴스" 배지 후보를 만든다. 탭만 감춘 것이다.
@@ -32,68 +33,61 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
+/**
+ * 크림보드 헤더.
+ *
+ * 태그라인("크림은 위로 뜹니다")은 헤더에 문장으로 넣지 않고 `CREAM RISES` 배지로
+ * 대체한다 — 64px 안에서 문장은 로고·탭과 경쟁해 셋 다 흐려진다.
+ *
+ * ⚠️ 셸(2px 구획 프레임) 안에 들어가므로 sticky 가 아니다. 프레임 위쪽 모서리가
+ *    떨어져 나가면 "지면 위에 놓인 인쇄물" 이라는 구성이 깨진다.
+ */
 export function Nav() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-[#fbfaf7]/85 backdrop-blur-md backdrop-saturate-150">
-      <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-4 sm:gap-8 sm:px-10">
-        <Link href="/" className="flex shrink-0 items-center gap-3.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/pulmuone-logo.png"
-            alt="Pulmuone"
-            className="h-[24px] w-auto sm:h-[34px]"
-          />
-          <span className="hidden h-5 w-px bg-line sm:block" />
-          <span className="hidden items-center gap-1.5 sm:flex">
-            <CreamMark />
-            <span className="text-[12.5px] font-semibold text-muted">크림보드</span>
-          </span>
-        </Link>
+    <header className="flex h-16 items-center gap-6 border-b-2 border-ink bg-surface px-[26px]">
+      <Link href="/" className="flex shrink-0 items-center gap-[11px]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/pulmuone-logo.png" alt="Pulmuone" className="block h-[30px] w-auto" />
+        <span className="block h-[22px] w-[1.5px] bg-chip" />
+        <span className="whitespace-nowrap text-[19px] font-black tracking-[-0.03em] text-ink">
+          크림보드
+        </span>
+        <span className="cb-mono whitespace-nowrap rounded-[3px] bg-rise px-[7px] py-1 !text-[10px] !tracking-[0.1em] !text-ink">
+          CREAM RISES
+        </span>
+      </Link>
 
-        <nav className="nt-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto md:flex-none md:overflow-visible">
-          {LINKS.map((link) => {
-            const active = isActive(pathname, link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`shrink-0 whitespace-nowrap rounded-[9px] px-2.5 py-2 text-[13.5px] transition-colors sm:px-3.5 ${
-                  active
-                    ? "bg-accent-soft font-semibold text-accent-ink"
-                    : "font-medium text-muted-strong hover:bg-[#f2f0eb] hover:text-foreground"
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="hidden flex-1 md:block" />
-
-        <div className="flex items-center gap-3.5">
-          <div className="hidden h-9 w-[210px] items-center gap-2 rounded-[10px] border border-line bg-white px-3 md:flex">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#9c978c"
-              strokeWidth="2.2"
+      <nav className="nt-scroll ml-1.5 flex min-w-0 items-center gap-0.5 overflow-x-auto">
+        {LINKS.map((link) => {
+          const active = isActive(pathname, link.href);
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`cb-row-hover shrink-0 whitespace-nowrap px-[13px] py-2 text-[13px] ${
+                active
+                  ? "rounded-[4px] bg-ink font-extrabold text-on-dark"
+                  : "font-medium text-ink-2 hover:text-ink"
+              }`}
             >
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.2-3.2" />
-            </svg>
-            <span className="text-[13px] text-[#b4afa4]">키워드·카테고리 검색</span>
-          </div>
-          <div
-            style={{ background: "linear-gradient(145deg,#edf3e0,#d9e7bf)" }}
-            className="hidden h-[34px] w-[34px] items-center justify-center rounded-full text-[12.5px] font-bold text-accent sm:flex"
-          >
-            전
-          </div>
+              {link.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="ml-auto flex items-center gap-2.5">
+        <div className="hidden h-[34px] w-[180px] items-center gap-2 rounded-[4px] border-[1.5px] border-ink bg-shell px-3.5 md:flex">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6E6B62" strokeWidth="2.2">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.2-3.2" />
+          </svg>
+          <span className="whitespace-nowrap text-[12.5px] text-ink-4">키워드·카테고리 검색</span>
+        </div>
+        <div className="flex h-8 w-8 items-center justify-center rounded-[4px] bg-ink text-[12.5px] font-black text-on-dark">
+          전
         </div>
       </div>
     </header>

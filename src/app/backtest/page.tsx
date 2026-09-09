@@ -33,8 +33,8 @@ const DEFAULT_HITS = [
 ];
 
 const TONE: Record<"good" | "mid" | "bad", { chip: string; text: string }> = {
-  good: { chip: "bg-accent-soft text-accent", text: "text-accent" },
-  mid: { chip: "bg-[#fbf3de] text-[#8a6a00]", text: "text-[#8a6a00]" },
+  good: { chip: "bg-rise text-ink", text: "text-accent" },
+  mid: { chip: "bg-[#E9E3D2] text-[#5C5849]", text: "text-[#5C5849]" },
   bad: { chip: "bg-down-soft text-down", text: "text-down" },
 };
 
@@ -150,8 +150,8 @@ export default function BacktestPage() {
     <div className="space-y-7">
       <header>
         <div className="mb-2.5 flex items-center gap-2.5">
-          <h1 className="text-[26px] font-extrabold tracking-[-0.035em]">예측 검증 (백테스트)</h1>
-          <span className="rounded-full bg-accent-soft px-2.5 py-[3px] text-[11px] font-bold text-accent">
+          <h1 className="text-[40px] font-black leading-[1.05] tracking-[-0.045em] text-ink">예측 검증 (백테스트)</h1>
+          <span className="rounded-[3px] border-[1.5px] border-ink px-2.5 py-[3px] text-[11px] font-bold text-ink">
             히트 적중률
           </span>
         </div>
@@ -163,7 +163,7 @@ export default function BacktestPage() {
         </p>
       </header>
 
-      <form onSubmit={run} className="rounded-2xl border border-line bg-white p-4">
+      <form onSubmit={run} className="rounded-[5px] border-[1.5px] border-line bg-surface p-4">
         <label className="mb-2 block text-[12.5px] font-semibold text-muted-strong">
           검증할 과거 히트 키워드 <span className="font-normal text-muted">(쉼표 구분 · 최대 10개)</span>
         </label>
@@ -172,13 +172,12 @@ export default function BacktestPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="두바이초콜릿, 탕후루, 요아정 …"
-            className="h-10 flex-1 min-w-[280px] rounded-[10px] border border-line px-3.5 text-sm outline-none focus:border-accent-bright"
+            className="h-10 flex-1 min-w-[280px] rounded-[4px] border-[1.5px] border-line px-3.5 text-sm outline-none focus:border-accent-bright"
           />
           <button
             type="submit"
             disabled={loading}
-            style={{ background: "linear-gradient(145deg,#5a9b12,#4e8b10)" }}
-            className="h-10 rounded-[10px] px-5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
+            className="h-10 rounded-[4px] px-5 text-sm font-bold text-on-dark bg-ink shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
           >
             {loading ? "검증 중…" : "백테스트 실행"}
           </button>
@@ -190,10 +189,10 @@ export default function BacktestPage() {
         </p>
       </form>
 
-      {error && <div className="rounded-xl bg-down-soft px-4 py-3 text-sm text-down">{error}</div>}
+      {error && <div className="rounded-[5px] bg-down-soft px-4 py-3 text-sm text-down">{error}</div>}
 
       {!data ? (
-        <div className="rounded-2xl border border-dashed border-[#d8d3c9] bg-white px-4 py-16 text-center text-sm text-muted">
+        <div className="rounded-[5px] border border-dashed border-[#8A8676] bg-surface px-4 py-16 text-center text-sm text-muted">
           과거 히트 키워드를 넣고 <b className="font-semibold text-muted-strong">백테스트 실행</b>을 눌러보세요.
         </div>
       ) : (
@@ -225,13 +224,13 @@ export default function BacktestPage() {
           )}
 
           {data.missingData.length > 0 && (
-            <div className="rounded-xl bg-[#fbf3de] px-4 py-3 text-xs text-[#8a6a00]">
+            <div className="rounded-[5px] bg-[#E9E3D2] px-4 py-3 text-xs text-[#5C5849]">
               데이터랩에 곡선이 없어 제외: <b className="font-semibold">{data.missingData.join(", ")}</b>{" "}
               — 철자를 실제 검색어 형태로 바꿔보세요.
             </div>
           )}
 
-          <section className="rounded-2xl border border-line bg-white p-5">
+          <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
             <h2 className="mb-1 text-sm font-semibold text-muted-strong">백테스트 결과표</h2>
             <p className="mb-4 text-xs text-muted">
               <span className="inline-flex items-center gap-1">
@@ -267,7 +266,7 @@ export default function BacktestPage() {
             <div className="mt-5 grid gap-2 border-t border-line pt-4 sm:grid-cols-2 lg:grid-cols-4">
               {(["actionable", "hit", "late", "missed"] as const).map((v) => (
                 <div key={v} className="flex items-start gap-2 text-xs">
-                  <span className={`mt-0.5 rounded-full px-2 py-[2px] font-bold ${TONE[VERDICT_META[v].tone].chip}`}>
+                  <span className={`mt-0.5 rounded-[3px] px-2 py-[2px] font-bold ${TONE[VERDICT_META[v].tone].chip}`}>
                     {VERDICT_META[v].label}
                   </span>
                   <span className="text-muted">{VERDICT_META[v].desc}</span>
@@ -277,7 +276,7 @@ export default function BacktestPage() {
           </section>
 
           {/* 콘텐츠 교차검증 */}
-          <section className="rounded-2xl border border-line bg-white p-5">
+          <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
             <div className="mb-1 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-muted-strong">
                 콘텐츠 교차검증 <span className="font-normal text-muted">(SNS가 검색을 앞서는가)</span>
@@ -292,7 +291,7 @@ export default function BacktestPage() {
             </p>
 
             {contentError && (
-              <div className="mb-3 rounded-xl bg-[#fbf3de] px-4 py-3 text-xs text-[#8a6a00]">{contentError}</div>
+              <div className="mb-3 rounded-[5px] bg-[#E9E3D2] px-4 py-3 text-xs text-[#5C5849]">{contentError}</div>
             )}
 
             {content ? (
@@ -339,7 +338,7 @@ export default function BacktestPage() {
                 <div className="mt-5 grid gap-2 border-t border-line pt-4 sm:grid-cols-2 lg:grid-cols-4">
                   {(["content-leads", "coincident", "search-leads", "insufficient"] as const).map((v) => (
                     <div key={v} className="flex items-start gap-2 text-xs">
-                      <span className={`mt-0.5 rounded-full px-2 py-[2px] font-bold ${TONE[CONTENT_VERDICT_META[v].tone].chip}`}>
+                      <span className={`mt-0.5 rounded-[3px] px-2 py-[2px] font-bold ${TONE[CONTENT_VERDICT_META[v].tone].chip}`}>
                         {CONTENT_VERDICT_META[v].label}
                       </span>
                       <span className="text-muted">{CONTENT_VERDICT_META[v].desc}</span>
@@ -355,7 +354,7 @@ export default function BacktestPage() {
           </section>
 
           {/* 발굴 커버리지 */}
-          <section className="rounded-2xl border border-line bg-white p-5">
+          <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
             <div className="mb-1 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-muted-strong">
                 발굴 커버리지 <span className="font-normal text-muted">(시드가 이 히트들을 찾아내는가)</span>
@@ -373,19 +372,19 @@ export default function BacktestPage() {
                 value={coverageSeeds}
                 onChange={(e) => setCoverageSeeds(e.target.value)}
                 placeholder="시드 (예: 디저트, 베이커리, 음료, 스낵)"
-                className="h-10 flex-1 min-w-[260px] rounded-[10px] border border-line px-3.5 text-sm outline-none focus:border-accent-bright"
+                className="h-10 flex-1 min-w-[260px] rounded-[4px] border-[1.5px] border-line px-3.5 text-sm outline-none focus:border-accent-bright"
               />
               <button
                 type="submit"
                 disabled={coverageLoading}
-                className="h-10 rounded-[10px] border border-accent-bright px-5 text-sm font-bold text-accent transition-colors hover:bg-accent-soft disabled:opacity-60"
+                className="h-10 rounded-[4px] border border-accent-bright px-5 text-sm font-bold text-accent transition-colors hover:bg-mutedbg disabled:opacity-60"
               >
                 {coverageLoading ? "확인 중…" : "발굴 커버리지 확인"}
               </button>
             </form>
 
             {coverageError && (
-              <div className="mb-3 rounded-xl bg-down-soft px-4 py-3 text-sm text-down">{coverageError}</div>
+              <div className="mb-3 rounded-[5px] bg-down-soft px-4 py-3 text-sm text-down">{coverageError}</div>
             )}
 
             {coverage && (
@@ -430,7 +429,7 @@ export default function BacktestPage() {
                 <div className="mt-5 grid gap-2 border-t border-line pt-4 sm:grid-cols-2 lg:grid-cols-4">
                   {(["onDashboard", "surfacedButCut", "belowVolume", "notSurfaced"] as const).map((v) => (
                     <div key={v} className="flex items-start gap-2 text-xs">
-                      <span className={`mt-0.5 rounded-full px-2 py-[2px] font-bold ${TONE[COVERAGE_META[v].tone].chip}`}>
+                      <span className={`mt-0.5 rounded-[3px] px-2 py-[2px] font-bold ${TONE[COVERAGE_META[v].tone].chip}`}>
                         {COVERAGE_META[v].label}
                       </span>
                       <span className="text-muted">{COVERAGE_META[v].desc}</span>
@@ -438,7 +437,7 @@ export default function BacktestPage() {
                   ))}
                 </div>
 
-                <p className="mt-4 rounded-xl bg-[#f0eee9] px-4 py-3 text-xs leading-relaxed text-muted-strong">
+                <p className="mt-4 rounded-[5px] bg-[#E9E3D2] px-4 py-3 text-xs leading-relaxed text-muted-strong">
                   <b className="font-semibold">읽는 법</b> — 미발굴이 많다면 급상승 로직이 아니라{" "}
                   <b className="font-semibold">시드가 약한</b> 것입니다. keywordstool은 시드와 어휘가 겹치는
                   연관어만 반환하므로, <b className="font-semibold">신조어 제품명</b>(두바이초콜릿 등)은 카테고리
@@ -449,7 +448,7 @@ export default function BacktestPage() {
             )}
           </section>
 
-          <section className="rounded-2xl border border-line bg-white p-5 text-xs leading-relaxed text-muted">
+          <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5 text-xs leading-relaxed text-muted">
             <h3 className="mb-2 text-sm font-semibold text-muted-strong">방법론 · 한계</h3>
             <ul className="space-y-1.5">
               <li>
@@ -461,7 +460,7 @@ export default function BacktestPage() {
               <li>
                 <b className="font-semibold text-muted-strong">콘텐츠 교차검증</b>은 피크 이전 12개월 창으로
                 수집합니다. 상한만 두면 누적 조회수가 쌓인 옛날 영상이 잡혀 &ldquo;콘텐츠 선행&rdquo;이 과대
-                집계되므로, 하한(<code className="rounded bg-[#f0eee9] px-1">publishedAfter</code>)으로 트렌드 시기만
+                집계되므로, 하한(<code className="rounded bg-[#E9E3D2] px-1">publishedAfter</code>)으로 트렌드 시기만
                 남깁니다. order=viewCount 표본이라 조회수 낮은 초기 영상은 놓칠 수 있어 &ldquo;콘텐츠 선행&rdquo;
                 결론에는 <b className="font-semibold text-muted-strong">보수적</b>입니다.
               </li>
@@ -482,7 +481,7 @@ function Row({ r }: { r: BacktestResult }) {
   const meta = VERDICT_META[r.verdict];
   const tone = TONE[meta.tone];
   return (
-    <tr className="border-b border-[#f0eee9] last:border-0">
+    <tr className="border-b border-[#E9E3D2] last:border-0">
       <td className="py-3 pr-2 font-semibold text-accent-ink">{r.keyword}</td>
       <td className="py-3">
         <Spark weeks={r.weeks} signalIndex={r.signalIndex} peakIndex={r.peakIndex} />
@@ -507,7 +506,7 @@ function Row({ r }: { r: BacktestResult }) {
         {r.caughtAtPctOfPeak !== null ? `${r.caughtAtPctOfPeak}%` : "—"}
       </td>
       <td className="py-3 text-center">
-        <span title={meta.desc} className={`cursor-help rounded-full px-2.5 py-1 text-xs font-bold ${tone.chip}`}>
+        <span title={meta.desc} className={`cursor-help rounded-[3px] px-2.5 py-1 text-xs font-bold ${tone.chip}`}>
           {meta.label}
         </span>
       </td>
@@ -519,7 +518,7 @@ function CoverageRow({ h }: { h: CoverageHit }) {
   const meta = COVERAGE_META[h.status];
   const tone = TONE[meta.tone];
   return (
-    <tr className="border-b border-[#f0eee9] last:border-0">
+    <tr className="border-b border-[#E9E3D2] last:border-0">
       <td className="py-3 pr-2 font-semibold text-accent-ink">{h.keyword}</td>
       <td className={`py-3 text-right text-[13px] font-bold tabular-nums ${h.rank && h.rank <= DASHBOARD_TOP ? tone.text : "text-muted"}`}>
         {h.rank !== null ? `${h.rank}위` : "—"}
@@ -528,7 +527,7 @@ function CoverageRow({ h }: { h: CoverageHit }) {
         {h.volumeTotal !== null ? h.volumeTotal.toLocaleString() : "—"}
       </td>
       <td className="py-3 text-center">
-        <span title={meta.desc} className={`cursor-help rounded-full px-2.5 py-1 text-xs font-bold ${tone.chip}`}>
+        <span title={meta.desc} className={`cursor-help rounded-[3px] px-2.5 py-1 text-xs font-bold ${tone.chip}`}>
           {meta.label}
         </span>
       </td>
@@ -541,7 +540,7 @@ function ContentRow({ r }: { r: ContentBacktestResult }) {
   const tone = TONE[meta.tone];
   const lead = r.leadVsSignalMonths;
   return (
-    <tr className="border-b border-[#f0eee9] last:border-0">
+    <tr className="border-b border-[#E9E3D2] last:border-0">
       <td className="py-3 pr-2 font-semibold text-accent-ink">{r.keyword}</td>
       <td className="py-3">
         <MonthBars r={r} />
@@ -562,7 +561,7 @@ function ContentRow({ r }: { r: ContentBacktestResult }) {
               : `${-lead}개월 늦음`}
       </td>
       <td className="py-3 text-center">
-        <span title={meta.desc} className={`cursor-help rounded-full px-2.5 py-1 text-xs font-bold ${tone.chip}`}>
+        <span title={meta.desc} className={`cursor-help rounded-[3px] px-2.5 py-1 text-xs font-bold ${tone.chip}`}>
           {meta.label}
         </span>
       </td>
@@ -586,7 +585,7 @@ function MonthBars({ r }: { r: ContentBacktestResult }) {
         const isOnset = b.month === r.onsetMonth;
         const isPeak = b.month === r.peakMonth;
         const isSignal = b.month === r.signalMonth;
-        const fill = isPeak ? "#b0512f" : isOnset ? "#4e8b10" : "#c9dfa3";
+        const fill = isPeak ? "#5C5849" : isOnset ? "#00723F" : "#00C26A";
         return (
           <g key={b.month}>
             {isSignal && (
@@ -595,7 +594,7 @@ function MonthBars({ r }: { r: ContentBacktestResult }) {
                 y1="0"
                 x2={i * bw + bw / 2}
                 y2={H - 4}
-                stroke="#4e8b10"
+                stroke="#00723F"
                 strokeWidth="1"
                 strokeDasharray="2 2"
                 opacity="0.55"
@@ -638,9 +637,9 @@ function Spark({
 
   return (
     <svg width={W} height={H} className="overflow-visible">
-      <path d={path} fill="none" stroke="#c9dfa3" strokeWidth="1.5" />
+      <path d={path} fill="none" stroke="#00C26A" strokeWidth="1.5" />
       {/* 피크 */}
-      <circle cx={x(peakIndex)} cy={y(weeks[peakIndex].ratio)} r="3.2" fill="#b0512f" />
+      <circle cx={x(peakIndex)} cy={y(weeks[peakIndex].ratio)} r="3.2" fill="#5C5849" />
       {/* 급상승 감지 */}
       {signalIndex !== null && (
         <>
@@ -649,12 +648,12 @@ function Spark({
             y1="2"
             x2={x(signalIndex)}
             y2={H - 2}
-            stroke="#4e8b10"
+            stroke="#00723F"
             strokeWidth="1"
             strokeDasharray="2 2"
             opacity="0.5"
           />
-          <circle cx={x(signalIndex)} cy={y(weeks[signalIndex].ratio)} r="3.2" fill="#4e8b10" />
+          <circle cx={x(signalIndex)} cy={y(weeks[signalIndex].ratio)} r="3.2" fill="#00723F" />
         </>
       )}
     </svg>
@@ -677,10 +676,10 @@ function Kpi({
   emphasis?: boolean;
 }) {
   return (
-    <div className={`rounded-2xl border p-4 ${emphasis ? "border-accent-bright/40 bg-accent-soft/40" : "border-line bg-white"}`}>
-      <p className="text-[12.5px] font-semibold text-muted-strong">{label}</p>
-      <p className={`mt-1.5 text-2xl font-extrabold leading-none tracking-tight ${emphasis ? "text-accent" : ""}`}>{value}</p>
-      <p className="mt-2 truncate text-xs text-muted">{sub}</p>
+    <div className={`rounded-[5px] border-[1.5px] border-ink p-4 ${emphasis ? "bg-rise" : "bg-surface"}`}>
+      <p className={`text-[12.5px] font-bold ${emphasis ? "text-ink" : "text-ink-2"}`}>{label}</p>
+      <p className="cb-num mt-1.5 text-[28px] leading-none tracking-[-0.04em] text-ink">{value}</p>
+      <p className={`mt-2 truncate text-xs ${emphasis ? "text-rise-ink" : "text-ink-4"}`}>{sub}</p>
     </div>
   );
 }

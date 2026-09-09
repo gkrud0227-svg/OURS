@@ -1,8 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { guessFoodType } from "@/lib/odm";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store-context";
 import { shopGrade, SHOP_META, type ShoppingTrend } from "@/lib/shopping";
 import { trendFromWeeks, gateByLevel, STATUS_META, type TrendStatus } from "@/lib/trend";
@@ -99,52 +97,29 @@ const VERDICT_META: Record<Verdict, { label: string; tone: "good" | "mid" | "mut
 
 /** 발굴 출처 배지 — 유튜브(콘텐츠발)·검색(자동완성발)·둘 다. */
 const SOURCE_META: Record<Source, { label: string; cls: string }> = {
-  youtube: { label: "유튜브", cls: "bg-[#f7ece6] text-down" },
-  search: { label: "검색", cls: "bg-[#eef3fb] text-[#365a8f]" },
-  both: { label: "유튜브+검색", cls: "bg-accent-soft text-accent-ink" },
+  youtube: { label: "유튜브", cls: "bg-mutedbg text-ink-3" },
+  search: { label: "검색", cls: "border border-chip text-ink-2" },
+  both: { label: "유튜브+검색", cls: "bg-ink text-on-dark" },
 };
 
+/*
+ * ⚠️ good(조건 통과) 만 그린이다. 나머지는 무채색 — 그린이 "통과"를 뜻한다는 약속을
+ *    지켜야 한 눈에 통과 건수가 세어진다.
+ */
 const TONE: Record<"good" | "mid" | "muted" | "bad", string> = {
-  good: "bg-accent-soft text-accent",
-  mid: "bg-[#fbf3de] text-[#8a6a00]",
-  muted: "bg-[#f0eee9] text-muted",
-  bad: "bg-down-soft text-down",
+  good: "bg-rise text-ink font-extrabold",
+  mid: "bg-mutedbg text-ink-3",
+  muted: "border border-chip text-ink-4",
+  bad: "border border-chip text-ink-3",
 };
 
 const STATUS_TONE: Record<TrendStatus, string> = {
-  surge: "text-accent font-bold",
-  up: "text-accent",
-  flat: "text-muted-strong",
-  down: "text-down",
-  none: "text-muted",
+  surge: "text-rise-text font-extrabold",
+  up: "text-rise-text font-bold",
+  flat: "text-ink-2",
+  down: "text-ink-3",
+  none: "text-ink-4",
 };
-
-/**
- * 발굴한 키워드에서 바로 제조처 스크리닝으로 넘어가는 링크.
- *
- * 품목제조보고는 공식 분류명으로만 검색되므로 키워드에서 품목유형을 추정해 넘긴다.
- * 추정이 안 되면(예: "탕후루") 유형 없이 보내 제조처 화면에서 직접 고르게 한다.
- */
-function OdmLink({ term }: { term: string }) {
-  const type = guessFoodType(term);
-  const href = type
-    ? `/odm?type=${encodeURIComponent(type)}&term=${encodeURIComponent(term)}`
-    : `/odm?term=${encodeURIComponent(term)}`;
-  return (
-    <Link
-      href={href}
-      title={
-        type
-          ? `"${term}" → ${type} 제조 이력이 있는 업체를 찾습니다`
-          : `"${term}" 는 품목유형을 자동 판단하지 못했습니다. 제조처 화면에서 유형을 골라주세요.`
-      }
-      className="inline-flex items-center gap-1 whitespace-nowrap rounded-[9px] border border-line px-2.5 py-1.5 text-xs font-semibold text-muted-strong transition-colors hover:border-accent-bright hover:bg-accent-soft hover:text-accent"
-    >
-      제조처 스크리닝
-      {type && <span className="font-normal text-muted">· {type}</span>}
-    </Link>
-  );
-}
 
 export default function DomesticPage() {
   // 발굴은 store 한 곳(candidates)에 담긴다 → 대시보드와 국내 발굴이 같은 데이터를 공유하고,
@@ -168,7 +143,18 @@ export default function DomesticPage() {
     void loadKeywordReason(term);
     document.getElementById("reason-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  const [seedText, setSeedText] = useState(seeds.join(", "));
+  /*
+   * 시드는 홈과 공유한다(store 의 seeds 하나).
+   * ⚠️ 마운트 시 한 번만 읽으면 안 된다 — store 하이드레이션은 비동기라 첫 렌더에는 아직
+   *    코드 기본값(DEFAULT_SEEDS)이 들어 있고, 그게 입력창에 박제된다. 그러면 홈에서 시드를
+   *    바꿔 발굴해도 이 탭에서 발굴 버튼을 누르는 순간 **옛 기본 시드로 다시 돌아** 두 탭의
+   *    랭킹이 갈린다. seeds 가 바뀔 때마다 입력창을 따라가게 한다.
+   */
+  const seedKey = seeds.join(", ");
+  const [seedText, setSeedText] = useState(seedKey);
+  useEffect(() => {
+    setSeedText(seedKey);
+  }, [seedKey]);
   const [error, setError] = useState<string | null>(null);
 
   // store.candidates(대시보드와 동일 데이터)를 국내 트렌드 표 모양(Row)으로 변환.
@@ -228,8 +214,8 @@ export default function DomesticPage() {
     <div className="space-y-7">
       <header>
         <div className="mb-2.5 flex items-center gap-2.5">
-          <h1 className="text-[26px] font-extrabold tracking-[-0.035em]">국내 트렌드</h1>
-          <span className="rounded-full bg-accent-soft px-2.5 py-[3px] text-[11px] font-bold text-accent">
+          <h1 className="text-[40px] font-black leading-[1.05] tracking-[-0.045em] text-ink">국내 트렌드</h1>
+          <span className="rounded-[3px] border-[1.5px] border-ink px-2.5 py-[3px] text-[11px] font-bold text-ink">
             콘텐츠 → 검색 검증
           </span>
         </div>
@@ -242,7 +228,7 @@ export default function DomesticPage() {
         </p>
       </header>
 
-      <form onSubmit={run} className="rounded-2xl border border-line bg-white p-4">
+      <form onSubmit={run} className="rounded-[5px] border-[1.5px] border-line bg-surface p-4">
         <label className="mb-2 block text-[12.5px] font-semibold text-muted-strong">
           시드 <span className="font-normal text-muted">(유튜브 검색용 · 의도어 포함 · 최대 8개)</span>
         </label>
@@ -251,18 +237,17 @@ export default function DomesticPage() {
             value={seedText}
             onChange={(e) => setSeedText(e.target.value)}
             placeholder="신상 디저트, 유행 간식, 편의점 신상"
-            className="h-10 flex-1 min-w-[280px] rounded-[10px] border border-line px-3.5 text-sm outline-none focus:border-accent-bright"
+            className="h-10 flex-1 min-w-[280px] rounded-[4px] border-[1.5px] border-line px-3.5 text-sm outline-none focus:border-accent-bright"
           />
           <button
             type="submit"
             disabled={discovering}
             title="유튜브 API 쿼터를 사용합니다 (시드 1개당 약 900 units)"
-            style={{ background: "linear-gradient(145deg,#5a9b12,#4e8b10)" }}
-            className="flex h-10 items-center gap-2 rounded-[10px] px-5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
+            className="flex h-10 items-center gap-2 rounded-[4px] px-5 text-sm font-bold text-on-dark bg-ink shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
           >
             {discovering ? "발굴 중…" : "키워드 발굴"}
             {!discovering && (
-              <span className="rounded bg-white/20 px-1.5 py-[1px] text-[10px] font-bold text-white">
+              <span className="rounded bg-on-dark/20 px-1.5 py-[1px] text-[10px] font-bold text-on-dark">
                 쿼터
               </span>
             )}
@@ -276,16 +261,16 @@ export default function DomesticPage() {
         </p>
       </form>
 
-      {error && <div className="rounded-xl bg-down-soft px-4 py-3 text-sm text-down">{error}</div>}
+      {error && <div className="rounded-[5px] bg-down-soft px-4 py-3 text-sm text-down">{error}</div>}
       {discovering && (
-        <div className="rounded-xl bg-accent-soft px-4 py-3 text-sm text-accent-ink">
+        <div className="rounded-[5px] bg-rise px-4 py-3 text-sm text-ink">
           유튜브 콘텐츠 발굴 → 자동완성 확장 → 데이터랩 검증 중…
         </div>
       )}
 
       {rows.length === 0 ? (
         !discovering && (
-          <div className="rounded-2xl border border-dashed border-[#d8d3c9] bg-white px-4 py-16 text-center text-sm text-muted">
+          <div className="rounded-[5px] border border-dashed border-[#8A8676] bg-surface px-4 py-16 text-center text-sm text-muted">
             시드를 넣고 <b className="font-semibold text-muted-strong">키워드 발굴</b>을 눌러보세요. 대시보드에서 발굴한 결과도 여기 함께 뜹니다.
           </div>
         )
@@ -302,7 +287,7 @@ export default function DomesticPage() {
             <Kpi label="검색 자동완성" value={String(acCount)} sub="발굴어 확장" />
           </div>
 
-          <section className="rounded-2xl border border-line bg-white p-5">
+          <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
             <div className="mb-1 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-muted-strong">
                 발굴 후보 <span className="font-normal text-muted">(콘텐츠 신호 + 검색 검증)</span>
@@ -335,7 +320,6 @@ export default function DomesticPage() {
                     <th className="py-2.5 font-semibold">검색 검증 (데이터랩)</th>
                     <th className="py-2.5 font-semibold">구매 의향 (쇼핑)</th>
                     <th className="py-2.5 text-center font-semibold">종합</th>
-                    <th className="py-2.5 text-right font-semibold">제조사 찾기</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -344,16 +328,16 @@ export default function DomesticPage() {
                     const vm = VERDICT_META[v];
                     const sm = STATUS_META[r.searchStatus];
                     return (
-                      <tr key={r.term} className="border-b border-[#f0eee9] last:border-0">
+                      <tr key={r.term} className="border-b border-[#E9E3D2] last:border-0">
                         <td className="py-3 pr-2">
                           <span className="font-semibold text-accent-ink">{r.term}</span>
-                          <span className={`ml-2 rounded-full px-2 py-[2px] text-[10.5px] font-bold ${SOURCE_META[r.source].cls}`}>
+                          <span className={`ml-2 rounded-[3px] px-2 py-[2px] text-[10.5px] font-bold ${SOURCE_META[r.source].cls}`}>
                             {SOURCE_META[r.source].label}
                           </span>
                           {r.novel && (
                             <span
                               title="과거 3~12개월 유튜브 표본엔 없다가 최근 처음 등장한 단어입니다. 진짜 신조어인지는 별개 — 표본에 없던 일반어도 여기 들어올 수 있습니다."
-                              className="ml-1.5 cursor-help rounded-full bg-accent-soft px-2 py-[2px] text-[10.5px] font-bold text-accent"
+                              className="ml-1.5 cursor-help rounded-[3px] bg-mutedbg px-2 py-[2px] text-[10.5px] font-bold text-ink-3"
                             >
                               신규 등장
                             </span>
@@ -364,7 +348,7 @@ export default function DomesticPage() {
                               onClick={() => showReason(r.term)}
                               disabled={reasonLoadingTerm === r.term}
                               title={`"${r.term}"의 인기 영상 댓글에서 확산 이유를 집계합니다 (약 ${YT_KEYWORD_REASON_PER_KEYWORD} units)`}
-                              className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-[3px] text-[11px] font-semibold text-muted-strong transition-colors hover:border-accent-bright hover:bg-accent-soft hover:text-accent disabled:opacity-60"
+                              className="inline-flex items-center gap-1 rounded-[3px] border-[1.5px] border-line px-2 py-[3px] text-[11px] font-semibold text-muted-strong transition-colors hover:border-accent-bright hover:bg-mutedbg hover:text-accent disabled:opacity-60"
                             >
                               {reasonLoadingTerm === r.term ? "집계 중…" : "확산이유 ▸"}
                             </button>
@@ -402,12 +386,9 @@ export default function DomesticPage() {
                           })()}
                         </td>
                         <td className="py-3 text-center">
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${TONE[vm.tone]}`}>
+                          <span className={`rounded-[3px] px-2.5 py-1 text-xs font-bold ${TONE[vm.tone]}`}>
                             {vm.label}
                           </span>
-                        </td>
-                        <td className="py-3 text-right">
-                          <OdmLink term={r.term} />
                         </td>
                       </tr>
                     );
@@ -431,7 +412,7 @@ export default function DomesticPage() {
               />
             </div>
 
-            <div className="mt-4 rounded-xl border border-line bg-[#fbfaf7] p-4 text-xs leading-relaxed text-muted">
+            <div className="mt-4 rounded-[5px] border-[1.5px] border-line bg-[#FCFAF3] p-4 text-xs leading-relaxed text-muted">
               <p className="mb-1 font-semibold text-muted-strong">상승률 계산식</p>
               <p className="font-mono text-[11.5px] text-muted-strong">
                 상승률(%) = (최근 2주 평균 − 이전 2주 평균) ÷ 이전 2주 평균 × 100
@@ -445,7 +426,7 @@ export default function DomesticPage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-line bg-white p-5 text-xs leading-relaxed text-muted">
+          <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5 text-xs leading-relaxed text-muted">
             <h3 className="mb-2 text-sm font-semibold text-muted-strong">이 방식이 keywordstool보다 나은 점</h3>
             <ul className="space-y-1.5">
               <li>
@@ -483,18 +464,21 @@ function Legend({
 }) {
   return (
     <div className="flex items-start gap-2">
-      <span className={`mt-0.5 rounded-full px-2 py-[2px] font-bold ${TONE[tone]}`}>{label}</span>
+      <span className={`mt-0.5 rounded-[3px] px-2 py-[2px] font-bold ${TONE[tone]}`}>{label}</span>
       <span className="text-muted">{desc}</span>
     </div>
   );
 }
 
 function Kpi({ label, value, sub, emphasis }: { label: string; value: string; sub: string; emphasis?: boolean }) {
+  // 강조 = 조건을 통과한 후보 수. 그린 면 위 글자는 전부 잉크로 둔다(그린 위 그린은 안 읽힌다).
   return (
-    <div className={`rounded-2xl border p-4 ${emphasis ? "border-accent-bright/40 bg-accent-soft/40" : "border-line bg-white"}`}>
-      <p className="text-[12.5px] font-semibold text-muted-strong">{label}</p>
-      <p className={`mt-1.5 text-2xl font-extrabold leading-none tracking-tight ${emphasis ? "text-accent" : ""}`}>{value}</p>
-      <p className="mt-2 truncate text-xs text-muted">{sub}</p>
+    <div
+      className={`rounded-[5px] border-[1.5px] border-ink p-4 ${emphasis ? "bg-rise" : "bg-surface"}`}
+    >
+      <p className={`text-[12.5px] font-bold ${emphasis ? "text-ink" : "text-ink-2"}`}>{label}</p>
+      <p className="cb-num mt-1.5 text-[28px] leading-none tracking-[-0.04em] text-ink">{value}</p>
+      <p className={`mt-2 truncate text-xs ${emphasis ? "text-rise-ink" : "text-ink-4"}`}>{sub}</p>
     </div>
   );
 }

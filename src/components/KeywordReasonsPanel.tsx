@@ -22,7 +22,7 @@ export function KeywordReasonsPanel({
   loadingTerm?: string | null;
 }) {
   const shell = (body: React.ReactNode) => (
-    <section id="reason-panel" className="rounded-2xl border border-line bg-white p-5">
+    <section id="reason-panel" className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-muted-strong">
           키워드별 확산 이유 <span className="font-normal text-muted">(시청자 댓글 기준)</span>
@@ -34,7 +34,7 @@ export function KeywordReasonsPanel({
   );
 
   const loadingBanner = loadingTerm ? (
-    <div className="mb-3 rounded-xl bg-accent-soft px-4 py-2.5 text-[13px] text-accent-ink">
+    <div className="mb-3 rounded-[5px] bg-rise px-4 py-2.5 text-[13px] text-ink">
       <b className="font-bold">{loadingTerm}</b> 확산 이유를 인기 영상 댓글에서 집계 중…
     </div>
   ) : null;
@@ -66,7 +66,7 @@ export function KeywordReasonsPanel({
           const thin = !top || top.docHits < MIN_DOC_HITS;
           const maxHits = Math.max(...active.map((c) => c.docHits), 1);
           return (
-            <div key={k.term} className="rounded-xl border border-line bg-[#fbfaf7] px-3.5 py-3">
+            <div key={k.term} className="rounded-[5px] border-[1.5px] border-line bg-[#FCFAF3] px-3.5 py-3">
               <div className="mb-2 flex items-baseline justify-between gap-2">
                 <span className="text-[13.5px] font-bold text-accent-ink">{k.term}</span>
                 <span className="shrink-0 text-[11px] text-muted">
@@ -89,13 +89,13 @@ export function KeywordReasonsPanel({
                       return (
                         <div key={c.key} className="flex items-center gap-2.5">
                           <span className="w-[74px] shrink-0 text-xs font-semibold">{c.label}</span>
-                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#eceae4]">
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-[#E9E3D2]">
                             <div
                               className="h-full rounded-full"
                               style={{
                                 width: `${Math.max(w, 5)}%`,
                                 background:
-                                  i === 0 ? "linear-gradient(90deg,#82bc00,#4e8b10)" : "#c9dfa3",
+                                  i === 0 ? "#00C26A" : "#00C26A",
                               }}
                             />
                           </div>

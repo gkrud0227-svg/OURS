@@ -14,7 +14,7 @@ import type { CoFlowResult } from "@/lib/types";
  */
 export function FlowPanel({ flow }: { flow: CoFlowResult | null }) {
   const shell = (body: React.ReactNode) => (
-    <section className="rounded-2xl border border-line bg-white p-5">
+    <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-muted-strong">
           SNS 확산 흐름 <span className="font-normal text-muted">(지금 함께 퍼지는 말)</span>
@@ -41,7 +41,7 @@ export function FlowPanel({ flow }: { flow: CoFlowResult | null }) {
 
   return shell(
     <>
-      <div className="mb-4 rounded-xl bg-accent-soft px-4 py-3 text-[13px] text-accent-ink">
+      <div className="mb-4 rounded-[5px] bg-rise px-4 py-3 text-[13px] text-ink">
         지금 국내 SNS엔 <b className="text-sm font-bold">{top.term}</b>이(가) 가장 넓게 퍼집니다{" "}
         <span className="font-semibold">
           — 영상 {top.videos}건 · 채널 {top.channels}개
@@ -62,18 +62,18 @@ export function FlowPanel({ flow }: { flow: CoFlowResult | null }) {
                 {t.novel && (
                   <span
                     title="과거 표본엔 없다가 최근 처음 등장한 단어"
-                    className="shrink-0 rounded-full bg-accent-soft px-1.5 py-[1px] text-[9.5px] font-bold text-accent"
+                    className="shrink-0 rounded-[3px] bg-rise px-1.5 py-[1px] text-[9.5px] font-bold text-ink"
                   >
                     신규
                   </span>
                 )}
               </span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#f0eee9]">
+              <div className="h-2 flex-1 overflow-hidden rounded-[3px] bg-[#E9E3D2]">
                 <div
                   className="h-full rounded-full"
                   style={{
                     width: `${Math.max(pct, 4)}%`,
-                    background: i === 0 ? "linear-gradient(90deg,#82bc00,#4e8b10)" : "#c9dfa3",
+                    background: i === 0 ? "#00C26A" : "#00C26A",
                   }}
                 />
               </div>

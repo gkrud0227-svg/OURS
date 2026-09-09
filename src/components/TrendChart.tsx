@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import type { WeekPoint } from "@/lib/types";
 
-const ACCENT = "#C17A5A";
+const ACCENT = "#8A8676";
 
 export function TrendChart({ data }: { data: WeekPoint[] }) {
   const chartData = data.map((d) => ({
@@ -23,16 +23,16 @@ export function TrendChart({ data }: { data: WeekPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <LineChart data={chartData} margin={{ top: 12, right: 16, left: -12, bottom: 4 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#efe7e2" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#E9E3D2" vertical={false} />
         <XAxis
           dataKey="label"
-          tick={{ fontSize: 12, fill: "#9a8f89" }}
+          tick={{ fontSize: 12, fill: "#6E6B62" }}
           axisLine={false}
           tickLine={false}
           padding={{ left: 8, right: 8 }}
         />
         <YAxis
-          tick={{ fontSize: 12, fill: "#9a8f89" }}
+          tick={{ fontSize: 12, fill: "#6E6B62" }}
           axisLine={false}
           tickLine={false}
           width={40}

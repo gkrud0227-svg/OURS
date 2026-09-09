@@ -7,7 +7,7 @@ export function ReasonTags({ keyword }: { keyword: Keyword }) {
   const r = keyword.youtube?.reasons;
 
   const hint = (text: string) => (
-    <section className="rounded-2xl border border-line bg-white p-5">
+    <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
       <h2 className="mb-1 text-sm font-semibold text-muted-strong">
         이유 태그 <span className="font-normal text-muted">(확산 이유 추정)</span>
       </h2>
@@ -40,7 +40,7 @@ export function ReasonTags({ keyword }: { keyword: Keyword }) {
   const topPct = Math.round(top.share * 100);
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-5">
+    <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-muted-strong">
           이유 태그 <span className="font-normal text-muted">(확산 이유 추정)</span>
@@ -52,7 +52,7 @@ export function ReasonTags({ keyword }: { keyword: Keyword }) {
         </span>
       </div>
 
-      <div className="mb-4 rounded-xl bg-accent-soft px-4 py-3 text-[13px] text-accent-ink">
+      <div className="mb-4 rounded-[5px] bg-rise px-4 py-3 text-[13px] text-ink">
         주요 확산 이유: <b className="text-sm font-bold">{top.label}</b>{" "}
         <span className="font-semibold">
           — 영상 {top.docHits}건 ({topPct}%)에서 언급
@@ -68,13 +68,13 @@ export function ReasonTags({ keyword }: { keyword: Keyword }) {
           return (
             <div key={c.key} className="flex items-center gap-3">
               <span className="w-24 shrink-0 text-[13px] font-semibold">{c.label}</span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#f0eee9]">
+              <div className="h-2 flex-1 overflow-hidden rounded-[3px] bg-[#E9E3D2]">
                 <div
                   className="h-full rounded-full"
                   style={{
                     width: `${Math.max(pct, 3)}%`,
                     background:
-                      i === 0 ? "linear-gradient(90deg,#82bc00,#4e8b10)" : "#c9dfa3",
+                      i === 0 ? "#00C26A" : "#00C26A",
                   }}
                 />
               </div>

@@ -24,9 +24,9 @@ const INITIAL: Record<ScoreKey, number> = {
 };
 
 const VERDICT_STYLE: Record<VerdictKey, string> = {
-  go: "bg-accent text-white",
+  go: "bg-ink text-on-dark",
   improve: "bg-amber-100 text-amber-700",
-  next: "bg-neutral-100 text-neutral-500",
+  next: "bg-neutral-100 text-ink-3",
 };
 
 export function ScorecardClient() {
@@ -76,14 +76,14 @@ export function ScorecardClient() {
   }
 
   if (!hydrated) {
-    return <div className="h-64 animate-pulse rounded-2xl bg-neutral-100" />;
+    return <div className="h-64 animate-pulse rounded-[5px] bg-neutral-100" />;
   }
 
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">제품 후보 스코어카드</h1>
-        <p className="mt-1 text-sm text-neutral-500">
+        <h1 className="text-[40px] font-black leading-[1.05] tracking-[-0.045em] text-ink">제품 후보 스코어카드</h1>
+        <p className="mt-1 text-sm text-ink-3">
           5가지 기준을 각 {SCORE_MAX}점으로 평가합니다. 총점 {GO_THRESHOLD}점
           이상이면 “즉시 진행” 후보입니다.
         </p>
@@ -91,7 +91,7 @@ export function ScorecardClient() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* 입력 */}
-        <section className="space-y-5 rounded-2xl border border-neutral-200 bg-white p-5">
+        <section className="space-y-5 rounded-[5px] border border-neutral-200 bg-surface p-5">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-neutral-700">
               제품명
@@ -100,7 +100,7 @@ export function ScorecardClient() {
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
               placeholder="예: 흑임자 크림 크루아상"
-              className="w-full rounded-xl border border-neutral-200 px-4 py-2.5 text-sm outline-none focus:border-accent"
+              className="w-full rounded-[5px] border border-neutral-200 px-4 py-2.5 text-sm outline-none focus:border-accent"
             />
           </div>
 
@@ -135,7 +135,7 @@ export function ScorecardClient() {
           <button
             onClick={onSave}
             disabled={!productName.trim()}
-            className="w-full rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="w-full rounded-[5px] bg-ink px-5 py-2.5 text-sm font-medium text-on-dark transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             스코어카드 저장
           </button>
@@ -143,20 +143,20 @@ export function ScorecardClient() {
 
         {/* 결과 요약 */}
         <section className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-center">
-            <p className="text-sm text-neutral-500">총점</p>
+          <div className="rounded-[5px] border border-neutral-200 bg-surface p-6 text-center">
+            <p className="text-sm text-ink-3">총점</p>
             <p className="mt-1 text-5xl font-semibold tabular-nums">
               {total}
               <span className="text-lg text-neutral-300"> / {SCORE_TOTAL_MAX}</span>
             </p>
             <div
-              className={`mt-4 inline-flex rounded-full px-4 py-1.5 text-sm font-medium ${VERDICT_STYLE[v.key]}`}
+              className={`mt-4 inline-flex rounded-[3px] px-4 py-1.5 text-sm font-medium ${VERDICT_STYLE[v.key]}`}
             >
               {v.label}
             </div>
-            <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+            <div className="mt-5 h-2 w-full overflow-hidden rounded-[3px] bg-neutral-100">
               <div
-                className="h-full rounded-full bg-accent transition-all"
+                className="h-full rounded-[3px] bg-accent transition-all"
                 style={{ width: `${(total / SCORE_TOTAL_MAX) * 100}%` }}
               />
             </div>
@@ -171,7 +171,7 @@ export function ScorecardClient() {
       <section>
         <h2 className="mb-3 text-lg font-semibold">저장된 스코어카드</h2>
         {scorecards.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-10 text-center text-sm text-neutral-400">
+          <p className="rounded-[5px] border border-dashed border-neutral-300 bg-neutral-50 px-4 py-10 text-center text-sm text-neutral-400">
             아직 저장된 스코어카드가 없습니다.
           </p>
         ) : (
@@ -182,7 +182,7 @@ export function ScorecardClient() {
               return (
                 <li
                   key={sc.id}
-                  className="rounded-2xl border border-neutral-200 bg-white p-4"
+                  className="rounded-[5px] border border-neutral-200 bg-surface p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -193,7 +193,7 @@ export function ScorecardClient() {
                     </div>
                     <button
                       onClick={() => deleteScorecard(sc.id)}
-                      className="shrink-0 rounded-lg px-2 py-1 text-xs text-neutral-400 hover:bg-red-50 hover:text-red-500"
+                      className="shrink-0 rounded-[3px] px-2 py-1 text-xs text-neutral-400 hover:bg-red-50 hover:text-red-500"
                     >
                       삭제
                     </button>
@@ -204,7 +204,7 @@ export function ScorecardClient() {
                       <span className="text-sm text-neutral-300"> / 100</span>
                     </span>
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-medium ${VERDICT_STYLE[scV.key]}`}
+                      className={`rounded-[3px] px-3 py-1 text-xs font-medium ${VERDICT_STYLE[scV.key]}`}
                     >
                       {scV.label}
                     </span>

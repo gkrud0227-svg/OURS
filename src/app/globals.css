@@ -1,22 +1,71 @@
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=Archivo:wght@600;700;800;900&display=swap");
 @import "tailwindcss";
 
+/*
+ * 크림보드 아이덴티티 — "크림은 위로 뜬다".
+ *
+ * 브랜드 서사를 화면에 옮기는 방식은 딱 하나로 고정한다:
+ *   급상승 배수에 따른 3단 티어(크림 / 우선 / 침전).
+ * 물방울·거품·떠오르는 애니메이션 같은 장식적 표현은 쓰지 않는다.
+ *
+ * ⚠️ 그린(#00C26A)은 **상승·검증 통과·라벨링 완료·조건 통과**에만 쓴다.
+ *    그 외 강조는 흑백(잉크 + 굵기 + 크기)으로 처리한다. 그린을 장식으로 쓰면
+ *    티어 구분이 무너진다.
+ */
 :root {
-  --background: #fbfaf7;
-  --foreground: #23211c;
-  /* Pulmuone green accent */
-  --accent: #4e8b10;
-  --accent-strong: #5a9b12;
-  --accent-bright: #82bc00;
-  --accent-soft: #f1f7e5;
-  --accent-tint: #edf5e0;
-  --accent-ink: #3e7a0c;
-  --border: #eae7e0;
-  --border-soft: #f1efe9;
-  --muted: #9c978c;
-  --muted-strong: #6b675e;
-  --down: #b0512f;
-  --down-soft: #f7ece6;
+  /* 면 */
+  --cb-page: #efeadc; /* 브라우저 지면 */
+  --cb-shell: #f7f3e8; /* 대시보드 셸 내부 */
+  --cb-surface: #fcfaf3; /* 카드·패널·헤더 */
+  --cb-row1: #ffffff; /* TIER 1 행 — 가장 밝다 = 더 오른 것 */
+  --cb-row2: #fcfaf3; /* TIER 2 행 */
+  --cb-muted-bg: #e9e3d2; /* 보조 면, "대기" 배지, 프로그레스 트랙 */
+  --cb-band3: #f1ecde; /* TIER 3 밴드 헤더 */
+
+  /* 잉크 */
+  --cb-ink: #0b0b0a;
+  --cb-ink-2: #4a463c; /* 비활성 내비, 보조 텍스트 */
+  --cb-ink-3: #5c5849; /* 설명문, 배지 텍스트 */
+  --cb-ink-4: #6e6b62; /* 라벨(mono), 플레이스홀더 */
+  --cb-on-dark: #fcfaf3;
+  --cb-on-dark-dim: #bfbcb2;
+
+  /* 상승 — 그린 */
+  --cb-rise: #00c26a; /* 면 */
+  --cb-rise-ink: #0b3d25; /* 그린 배경 위 보조 텍스트 */
+  --cb-rise-text: #00723f; /* 밝은 배경 위 그린 텍스트 */
+
+  /* 괘선 2단계 */
+  --cb-line-strong: #0b0b0a; /* 구획 2px / 행 1.5px */
+  --cb-line-hair: #e4decd; /* TIER 2 행 구분 1px */
+  --cb-line-divider: #d6d0be; /* KPI 바 내부 세로 구분 */
+  --cb-line-chip: #c9c4b2; /* 칩·비활성 버튼 테두리 */
+
+  /* 4주 추이 미니바 — 과거 → 현재 */
+  --cb-bar-1: #e0dac8;
+  --cb-bar-2: #c9c4b2;
+  --cb-bar-3: #8a8676;
+  --cb-bar-4: #0b0b0a;
+
+  /*
+   * 기존 토큰 이름 유지 — 화면 코드는 그대로 두고 값만 크림보드로 바꾼다.
+   * (정보구조·기능은 건드리지 않는다는 리스킨 원칙)
+   */
+  --background: var(--cb-shell);
+  --foreground: var(--cb-ink);
+  --accent: var(--cb-rise-text); /* 밝은 면 위 그린 텍스트 */
+  --accent-strong: var(--cb-rise-text);
+  --accent-bright: var(--cb-rise); /* 그린 면·포커스 */
+  --accent-soft: var(--cb-rise); /* 통과·완료 배지 면 */
+  --accent-tint: var(--cb-rise);
+  --accent-ink: var(--cb-ink); /* 그린 면 위 텍스트 */
+  --border: var(--cb-line-strong); /* 카드·표 외곽 = 검정 */
+  --border-soft: var(--cb-line-hair); /* 행 구분 = 미세선 */
+  --muted: var(--cb-ink-4);
+  --muted-strong: var(--cb-ink-2);
+  /* 하락은 붉은색을 쓰지 않는다 — 그린이 상승 전용이므로 방향은 화살표와 명도로 읽힌다 */
+  --down: var(--cb-ink-3);
+  --down-soft: var(--cb-muted-bg);
 }
 
 @theme inline {
@@ -34,31 +83,135 @@
   --color-muted-strong: var(--muted-strong);
   --color-down: var(--down);
   --color-down-soft: var(--down-soft);
+
+  /* 크림보드 전용 */
+  --color-page: var(--cb-page);
+  --color-shell: var(--cb-shell);
+  --color-surface: var(--cb-surface);
+  --color-row1: var(--cb-row1);
+  --color-row2: var(--cb-row2);
+  --color-mutedbg: var(--cb-muted-bg);
+  --color-band3: var(--cb-band3);
+  --color-ink: var(--cb-ink);
+  --color-ink-2: var(--cb-ink-2);
+  --color-ink-3: var(--cb-ink-3);
+  --color-ink-4: var(--cb-ink-4);
+  --color-on-dark: var(--cb-on-dark);
+  --color-on-dark-dim: var(--cb-on-dark-dim);
+  --color-rise: var(--cb-rise);
+  --color-rise-ink: var(--cb-rise-ink);
+  --color-rise-text: var(--cb-rise-text);
+  --color-hair: var(--cb-line-hair);
+  --color-divider: var(--cb-line-divider);
+  --color-chip: var(--cb-line-chip);
+
   --font-sans:
-    "Pretendard", "Pretendard Variable", -apple-system, BlinkMacSystemFont,
-    "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Malgun Gothic", system-ui, sans-serif;
+  /* 모든 수치(배수·건수·점수)는 Archivo */
+  --font-num: "Archivo", "Noto Sans KR", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 html {
   scroll-behavior: smooth;
+  background: var(--cb-page);
 }
 
 body {
-  background: var(--background);
+  background: var(--cb-page);
   color: var(--foreground);
   font-family: var(--font-sans);
   font-weight: 400;
-  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
+/* 한글 제목은 900 + 마이너스 letter-spacing. 세리프체는 쓰지 않는다. */
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+}
+
 ::selection {
-  background: #ddebbf;
+  background: var(--cb-rise);
+  color: var(--cb-ink);
+}
+
+/* 그림자 없음 — 깊이는 괘선과 명도로만 표현한다. 코드에 남은 shadow 유틸을 무력화. */
+[class*="shadow-["] {
+  box-shadow: none !important;
+}
+/* 단, 표 헤더 하단 경계는 inset shadow 로 구현돼 있어 살려 둔다. */
+[class*="shadow-[inset"] {
+  box-shadow: inset 0 -1.5px 0 var(--cb-ink) !important;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--cb-rise);
+  outline-offset: 2px;
 }
 
 input[type="range"].accent-range {
-  accent-color: var(--accent);
+  accent-color: var(--cb-rise);
+}
+
+/* ── 크림보드 컴포넌트 ────────────────────────────────────── */
+
+/* 대시보드 셸 — 지면(#EFEADC) 위에 놓인 2px 구획 프레임 */
+.cb-shell {
+  width: 100%;
+  min-width: 1240px;
+  max-width: 1280px;
+  background: var(--cb-shell);
+  border: 2px solid var(--cb-ink);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* 수치 전용 — 배수·건수·점수 */
+.cb-num {
+  font-family: var(--font-num);
+  font-weight: 900;
+  font-feature-settings: "tnum";
+}
+
+/* 라벨·날짜·코드성 텍스트 */
+.cb-mono {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  font-size: 10.5px;
+  color: var(--cb-ink-4);
+  text-transform: uppercase;
+}
+
+/* 표 헤더 라벨 */
+.cb-th {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  font-size: 10.5px;
+  color: var(--cb-on-dark-dim);
+}
+
+/* 티어 밴드 라벨 */
+.cb-tier {
+  font-family: var(--font-num);
+  font-weight: 900;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+}
+
+/*
+ * 행 hover — 배경만 스왑한다.
+ * ⚠️ 이동·부상 애니메이션은 넣지 않는다. 브랜드 서사는 이미 티어가 표현하고 있다.
+ */
+.cb-row-hover {
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 /* 부드러운 커스텀 스크롤바 */
@@ -67,9 +220,9 @@ input[type="range"].accent-range {
   height: 10px;
 }
 .nt-scroll::-webkit-scrollbar-thumb {
-  background: #dedad1;
+  background: var(--cb-line-chip);
   border-radius: 8px;
-  border: 3px solid var(--background);
+  border: 3px solid var(--cb-shell);
 }
 .nt-scroll::-webkit-scrollbar-track {
   background: transparent;

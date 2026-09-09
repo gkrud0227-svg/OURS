@@ -18,10 +18,18 @@ export default function RootLayout({
     <html lang="ko" className="h-full antialiased">
       <body className="min-h-full">
         <StoreProvider>
-          <Nav />
-          <main className="mx-auto max-w-[1280px] px-6 py-9 sm:px-10">
-            {children}
-          </main>
+          {/*
+           * 지면(#EFEADC) 위에 놓인 2px 구획 프레임.
+           * ⚠️ 최소 폭 1240px 을 유지하고 좁은 화면에서는 가로 스크롤로 넘긴다 —
+           *    순위·배수·상태를 한 화면에서 비교하는 것이 이 표의 목적이라
+           *    컬럼을 접으면 화면이 성립하지 않는다.
+           */}
+          <div className="flex justify-center overflow-x-auto p-7">
+            <div className="cb-shell">
+              <Nav />
+              <main className="px-[26px] pt-6 pb-[30px]">{children}</main>
+            </div>
+          </div>
         </StoreProvider>
       </body>
     </html>

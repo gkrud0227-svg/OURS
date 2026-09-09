@@ -22,7 +22,7 @@ import {
 type Status = { kind: "info" | "ok" | "warn" | "error"; text: string };
 
 const buttonBase =
-  "inline-flex min-h-10 items-center justify-center rounded-[10px] px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex min-h-10 items-center justify-center rounded-[4px] px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
 function formatNumber(value: number | null | undefined) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "-";
@@ -80,9 +80,9 @@ function directionLabel(direction: string, rankDelta?: number | null) {
 
 function statusClass(kind: Status["kind"]) {
   if (kind === "error") return "border-red-200 bg-red-50 text-red-700";
-  if (kind === "warn") return "border-[#ead7b8] bg-[#fff8e8] text-[#80612b]";
-  if (kind === "ok") return "border-[#dbe9c1] bg-accent-soft text-accent-ink";
-  return "border-line bg-white text-muted-strong";
+  if (kind === "warn") return "border-[#C9C4B2] bg-[#FCFAF3] text-[#5C5849]";
+  if (kind === "ok") return "border-[#00C26A] bg-rise text-ink";
+  return "border-line bg-surface text-muted-strong";
 }
 
 function getTerms(input: string) {
@@ -109,7 +109,7 @@ function MetricTile({
   delta?: string;
 }) {
   return (
-    <div className="min-h-[72px] min-w-0 rounded-[8px] border border-line bg-white px-4 py-3">
+    <div className="min-h-[72px] min-w-0 rounded-[4px] border-[1.5px] border-line bg-surface px-4 py-3">
       <p className="truncate text-xs font-medium text-muted">{label}</p>
       <p className="mt-1 truncate text-xl font-semibold tabular-nums text-foreground">
         {value}
@@ -309,7 +309,7 @@ export function InstagramLocalClient() {
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent-ink">
             Local Collector
           </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+          <h1 className="mt-2 text-[40px] font-black leading-[1.05] tracking-[-0.045em] text-ink">
             Instagram 관측 수집
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-strong">
@@ -322,7 +322,7 @@ export function InstagramLocalClient() {
             type="button"
             onClick={onOpenBrowser}
             disabled={busy}
-            className={`${buttonBase} bg-accent text-white hover:bg-accent-strong`}
+            className={`${buttonBase} bg-ink text-on-dark hover:bg-ink-2`}
           >
             브라우저 열기
           </button>
@@ -330,29 +330,29 @@ export function InstagramLocalClient() {
             type="button"
             onClick={onCloseBrowser}
             disabled={busy}
-            className={`${buttonBase} border border-line bg-white text-muted-strong hover:bg-[#f2f0eb]`}
+            className={`${buttonBase} border-[1.5px] border-line bg-surface text-muted-strong hover:bg-[#E9E3D2]`}
           >
             브라우저 닫기
           </button>
         </div>
       </header>
 
-      <div className={`rounded-[10px] border px-4 py-3 text-sm ${statusClass(status.kind)}`}>
+      <div className={`rounded-[4px] border px-4 py-3 text-sm ${statusClass(status.kind)}`}>
         {status.text}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="space-y-4 rounded-[10px] border border-line bg-white p-5">
-          <div className="grid grid-cols-2 gap-2 rounded-[10px] bg-[#f2f0eb] p-1">
+        <aside className="space-y-4 rounded-[4px] border-[1.5px] border-line bg-surface p-5">
+          <div className="grid grid-cols-2 gap-2 rounded-[4px] bg-[#E9E3D2] p-1">
             {(["keyword", "hashtag"] as const).map((value) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setMode(value)}
-                className={`rounded-[8px] px-3 py-2 text-sm font-semibold transition-colors ${
+                className={`rounded-[4px] px-3 py-2 text-sm font-semibold transition-colors ${
                   mode === value
-                    ? "bg-white text-accent-ink shadow-sm"
-                    : "text-muted-strong hover:bg-white/60"
+                    ? "bg-surface text-accent-ink shadow-sm"
+                    : "text-muted-strong hover:bg-surface/60"
                 }`}
               >
                 {value === "keyword" ? "키워드" : "해시태그"}
@@ -368,7 +368,7 @@ export function InstagramLocalClient() {
               rows={6}
               spellCheck={false}
               placeholder={mode === "keyword" ? "제주카페\n도넛\n팝업스토어" : "제주카페\n도넛"}
-              className="mt-2 w-full resize-none rounded-[10px] border border-line bg-[#fffdfa] px-3 py-3 text-sm outline-none transition-colors focus:border-accent"
+              className="mt-2 w-full resize-none rounded-[4px] border-[1.5px] border-line bg-[#FCFAF3] px-3 py-3 text-sm outline-none transition-colors focus:border-accent"
             />
           </label>
 
@@ -381,7 +381,7 @@ export function InstagramLocalClient() {
                 max={30}
                 value={maxPosts}
                 onChange={(event) => setMaxPosts(Number(event.target.value))}
-                className="mt-2 h-10 w-full rounded-[9px] border border-line px-3 text-sm outline-none focus:border-accent"
+                className="mt-2 h-10 w-full rounded-[4px] border-[1.5px] border-line px-3 text-sm outline-none focus:border-accent"
               />
             </label>
             <label className="block">
@@ -392,7 +392,7 @@ export function InstagramLocalClient() {
                 max={2}
                 value={scrollSteps}
                 onChange={(event) => setScrollSteps(Number(event.target.value))}
-                className="mt-2 h-10 w-full rounded-[9px] border border-line px-3 text-sm outline-none focus:border-accent"
+                className="mt-2 h-10 w-full rounded-[4px] border-[1.5px] border-line px-3 text-sm outline-none focus:border-accent"
               />
             </label>
             <label className="block">
@@ -404,12 +404,12 @@ export function InstagramLocalClient() {
                 step={100}
                 value={delayMs}
                 onChange={(event) => setDelayMs(Number(event.target.value))}
-                className="mt-2 h-10 w-full rounded-[9px] border border-line px-3 text-sm outline-none focus:border-accent"
+                className="mt-2 h-10 w-full rounded-[4px] border-[1.5px] border-line px-3 text-sm outline-none focus:border-accent"
               />
             </label>
           </div>
 
-          <label className="flex items-start gap-3 rounded-[9px] bg-[#fbfaf7] p-3 text-sm text-muted-strong">
+          <label className="flex items-start gap-3 rounded-[4px] bg-[#FCFAF3] p-3 text-sm text-muted-strong">
             <input
               type="checkbox"
               checked={collectDetails}
@@ -419,7 +419,7 @@ export function InstagramLocalClient() {
             <span>상위 게시물 상세 지표를 읽어 조회수, 댓글, 좋아요를 추출</span>
           </label>
 
-          <label className="flex items-start gap-3 rounded-[9px] bg-[#fbfaf7] p-3 text-sm text-muted-strong">
+          <label className="flex items-start gap-3 rounded-[4px] bg-[#FCFAF3] p-3 text-sm text-muted-strong">
             <input
               type="checkbox"
               checked={requireKeywordMatch}
@@ -433,7 +433,7 @@ export function InstagramLocalClient() {
             type="button"
             onClick={onCollect}
             disabled={busy}
-            className={`${buttonBase} w-full bg-neutral-900 text-white hover:bg-neutral-700`}
+            className={`${buttonBase} w-full bg-ink text-on-dark hover:bg-ink-2`}
           >
             {busy ? "작업 중" : `${modeLabel(mode)} 수집`}
           </button>
@@ -444,7 +444,7 @@ export function InstagramLocalClient() {
                 <span className="whitespace-nowrap">프로필</span>
                 <code
                   title={paths.browserProfileDir}
-                  className="min-w-0 truncate rounded bg-[#f7f5ef] px-2 py-0.5 font-sans text-[11px] text-muted-strong"
+                  className="min-w-0 truncate rounded bg-[#FCFAF3] px-2 py-0.5 font-sans text-[11px] text-muted-strong"
                 >
                   {paths.browserProfileDir}
                 </code>
@@ -453,7 +453,7 @@ export function InstagramLocalClient() {
                 <span className="whitespace-nowrap">데이터</span>
                 <code
                   title={paths.dbPath}
-                  className="min-w-0 truncate rounded bg-[#f7f5ef] px-2 py-0.5 font-sans text-[11px] text-muted-strong"
+                  className="min-w-0 truncate rounded bg-[#FCFAF3] px-2 py-0.5 font-sans text-[11px] text-muted-strong"
                 >
                   {paths.dbPath}
                 </code>
@@ -486,7 +486,7 @@ export function InstagramLocalClient() {
             />
           </div>
 
-          <div className="flex flex-col gap-3 rounded-[10px] border border-line bg-white p-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-col gap-3 rounded-[4px] border-[1.5px] border-line bg-surface p-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-foreground">수집 세션</h2>
               <p className="mt-1 max-w-full truncate text-xs text-muted" title={selectedRun ? `${selectedRun.status} · ${modeLabel(selectedRun.mode)} · ${selectedRun.terms?.join(", ") || selectedRun.label || "-"} · ${formatDate(selectedRun.startedAt)}` : undefined}>
@@ -505,7 +505,7 @@ export function InstagramLocalClient() {
                   setSelectedRunId(nextRunId);
                   await refreshData(nextRunId);
                 }}
-                className="h-10 min-w-0 rounded-[9px] border border-line bg-white px-3 text-sm outline-none focus:border-accent sm:w-auto sm:max-w-[230px]"
+                className="h-10 min-w-0 rounded-[4px] border-[1.5px] border-line bg-surface px-3 text-sm outline-none focus:border-accent sm:w-auto sm:max-w-[230px]"
               >
                 <option value="">세션 선택</option>
                 {runs.map((run) => (
@@ -517,7 +517,7 @@ export function InstagramLocalClient() {
               <select
                 value={selectedTrendKey}
                 onChange={(event) => setSelectedTrendKey(event.target.value)}
-                className="h-10 min-w-0 rounded-[9px] border border-line bg-white px-3 text-sm outline-none focus:border-accent sm:w-auto sm:max-w-[190px]"
+                className="h-10 min-w-0 rounded-[4px] border-[1.5px] border-line bg-surface px-3 text-sm outline-none focus:border-accent sm:w-auto sm:max-w-[190px]"
               >
                 <option value="">전체</option>
                 {groups.map((group) => (
@@ -530,7 +530,7 @@ export function InstagramLocalClient() {
                 type="button"
                 onClick={onRefresh}
                 disabled={busy}
-                className={`${buttonBase} border border-line bg-white text-muted-strong hover:bg-[#f2f0eb]`}
+                className={`${buttonBase} border-[1.5px] border-line bg-surface text-muted-strong hover:bg-[#E9E3D2]`}
               >
                 새로고침
               </button>
@@ -538,7 +538,7 @@ export function InstagramLocalClient() {
                 type="button"
                 onClick={onExport}
                 disabled={busy || !selectedRunId}
-                className={`${buttonBase} border border-line bg-white text-muted-strong hover:bg-[#f2f0eb]`}
+                className={`${buttonBase} border-[1.5px] border-line bg-surface text-muted-strong hover:bg-[#E9E3D2]`}
               >
                 CSV 저장
               </button>
@@ -546,7 +546,7 @@ export function InstagramLocalClient() {
           </div>
 
           <div className="grid gap-5 xl:grid-cols-2">
-            <div className="rounded-[10px] border border-line bg-white p-4">
+            <div className="rounded-[4px] border-[1.5px] border-line bg-surface p-4">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold">히스토리</h3>
                 <span className="text-xs text-muted">최근 {selectedGroup?.history.length ?? 0}회</span>
@@ -558,10 +558,10 @@ export function InstagramLocalClient() {
                     const height = Math.max(8, Math.round((value / historyMax) * 100));
                     return (
                       <div key={point.runId} className="flex min-w-0 flex-1 flex-col items-center gap-2">
-                        <div className="flex h-24 w-full items-end rounded-[7px] bg-[#f2f0eb] px-1">
+                        <div className="flex h-24 w-full items-end rounded-[7px] bg-[#E9E3D2] px-1">
                           <span
                             className={`block w-full rounded-[5px] ${
-                              point.runId === selectedRunId ? "bg-accent" : "bg-[#b8c99c]"
+                              point.runId === selectedRunId ? "bg-accent" : "bg-[#8A8676]"
                             }`}
                             style={{ height: `${height}%` }}
                           />
@@ -583,7 +583,7 @@ export function InstagramLocalClient() {
               )}
             </div>
 
-            <div className="rounded-[10px] border border-line bg-white p-4">
+            <div className="rounded-[4px] border-[1.5px] border-line bg-surface p-4">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold">순위 변화</h3>
                 <span className="text-xs text-muted">
@@ -642,14 +642,14 @@ export function InstagramLocalClient() {
                   </table>
                 </div>
               ) : (
-                <div className="flex min-h-[148px] items-center justify-center rounded-[8px] bg-[#fcfbf8] px-4 text-center text-sm text-muted">
+                <div className="flex min-h-[148px] items-center justify-center rounded-[4px] bg-[#FCFAF3] px-4 text-center text-sm text-muted">
                   같은 키워드의 이전 수집 세션이 없습니다.
                 </div>
               )}
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[10px] border border-line bg-white">
+          <div className="overflow-hidden rounded-[4px] border-[1.5px] border-line bg-surface">
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <h3 className="text-sm font-semibold">수집 항목</h3>
               <span className="text-xs text-muted">{formatNumber(visibleItems.length)}개</span>
@@ -666,7 +666,7 @@ export function InstagramLocalClient() {
                   <col className="w-[78px]" />
                   <col />
                 </colgroup>
-                <thead className="bg-[#fcfbf8] text-left text-xs text-muted">
+                <thead className="bg-[#FCFAF3] text-left text-xs text-muted">
                   <tr>
                     <th className="whitespace-nowrap px-4 py-3 font-semibold">순위</th>
                     <th className="whitespace-nowrap px-4 py-3 font-semibold">영역</th>
@@ -682,7 +682,7 @@ export function InstagramLocalClient() {
                   {visibleItems.length ? (
                     visibleItems.map((item) => (
                       <Fragment key={`${item.runId}-${item.url}`}>
-                        <tr className="border-t border-line-soft hover:bg-[#fcfbf6]">
+                        <tr className="border-t border-line-soft hover:bg-[#FCFAF3]">
                           <td className="whitespace-nowrap px-4 pb-1 pt-3 align-top font-semibold tabular-nums">
                             #{formatNumber(item.observedRank)}
                           </td>
@@ -720,7 +720,7 @@ export function InstagramLocalClient() {
                           <td colSpan={8} className="px-4 pb-3 pt-1 text-muted">
                             <p
                               title={item.caption || item.previewText || item.error || ""}
-                              className="ig-text-cell whitespace-normal rounded-[8px] bg-[#fbfaf7] px-3 py-2.5 leading-6"
+                              className="ig-text-cell whitespace-normal rounded-[4px] bg-[#FCFAF3] px-3 py-2.5 leading-6"
                             >
                               {shortText(item.caption || item.previewText || item.error, 220)}
                             </p>

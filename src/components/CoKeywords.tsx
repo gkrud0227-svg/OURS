@@ -117,7 +117,7 @@ export function CoKeywords({ keyword }: { keyword: Keyword }) {
   const verified = rows?.filter((r) => (r.coDocs ?? 0) >= MIN_CO_MENTION) ?? [];
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-5">
+    <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
       <div className="mb-1 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-muted-strong">
           동반 키워드 <span className="font-normal text-muted">(함께 뜨는 연관어)</span>
@@ -125,7 +125,7 @@ export function CoKeywords({ keyword }: { keyword: Keyword }) {
         <button
           onClick={analyze}
           disabled={loading}
-          className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-muted-strong transition-colors hover:border-accent-bright hover:text-accent disabled:opacity-50"
+          className="rounded-[3px] border-[1.5px] border-line bg-surface px-3 py-1.5 text-xs font-semibold text-muted-strong transition-colors hover:border-accent-bright hover:text-accent disabled:opacity-50"
         >
           {loading ? "분석 중…" : rows ? "다시 분석" : "분석"}
         </button>
@@ -137,10 +137,10 @@ export function CoKeywords({ keyword }: { keyword: Keyword }) {
       </p>
 
       {error && (
-        <p className="mb-3 rounded-lg bg-down-soft px-3 py-2 text-xs text-down">{error}</p>
+        <p className="mb-3 rounded-[3px] bg-down-soft px-3 py-2 text-xs text-down">{error}</p>
       )}
       {warn && (
-        <p className="mb-3 rounded-lg bg-[#fbf3de] px-3 py-2 text-xs text-[#8a6a00]">{warn}</p>
+        <p className="mb-3 rounded-[3px] bg-[#E9E3D2] px-3 py-2 text-xs text-[#5C5849]">{warn}</p>
       )}
 
       {rows === null ? (
@@ -152,7 +152,7 @@ export function CoKeywords({ keyword }: { keyword: Keyword }) {
       ) : (
         <>
           {verified.length > 0 ? (
-            <div className="mb-3 rounded-xl bg-accent-soft px-3 py-2 text-xs text-accent-ink">
+            <div className="mb-3 rounded-[5px] bg-rise px-3 py-2 text-xs text-ink">
               ✅ 실제로 함께 언급됨:{" "}
               <b className="font-semibold">
                 {verified.slice(0, 5).map((r) => r.name).join(" · ")}
@@ -166,16 +166,16 @@ export function CoKeywords({ keyword }: { keyword: Keyword }) {
             </div>
           ) : (
             docCount > 0 && (
-              <div className="mb-3 rounded-xl bg-[#f0eee9] px-3 py-2 text-xs text-muted-strong">
+              <div className="mb-3 rounded-[5px] bg-[#E9E3D2] px-3 py-2 text-xs text-muted-strong">
                 영상 {docCount}건에서 {MIN_CO_MENTION}건 이상 함께 언급된 키워드가
                 없습니다. 아래는 <b>검색 동반 상승</b>일 가능성이 큽니다.
               </div>
             )
           )}
 
-          <div className="overflow-hidden rounded-xl border border-line-soft">
+          <div className="overflow-hidden rounded-[5px] border-[1.5px] border-line-soft">
             <table className="w-full text-[13px]">
-              <thead className="bg-[#fcfbf8] text-left text-[11.5px] text-muted">
+              <thead className="bg-[#FCFAF3] text-left text-[11.5px] text-muted">
                 <tr>
                   <th className="px-3 py-2 font-bold">연관 키워드</th>
                   <th
@@ -193,31 +193,31 @@ export function CoKeywords({ keyword }: { keyword: Keyword }) {
                 {rows.map((r) => {
                   const ok = (r.coDocs ?? 0) >= MIN_CO_MENTION;
                   return (
-                    <tr key={r.name} className={ok ? "bg-[#fafdf3]" : "hover:bg-[#fcfbf6]"}>
+                    <tr key={r.name} className={ok ? "bg-[#E9E3D2]" : "hover:bg-[#FCFAF3]"}>
                       <td className="px-3 py-2 font-semibold">{r.name}</td>
                       <td className="px-3 py-2 text-center">
                         {r.coDocs === null ? (
                           <span className="text-xs text-muted">—</span>
                         ) : ok ? (
                           <span
-                            className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-bold text-accent-ink"
+                            className="inline-flex items-center gap-1 rounded-[3px] bg-rise px-2 py-0.5 text-[11px] font-bold text-ink"
                             title={`YouTube ${r.ytHits}건 · Instagram 캡션 ${r.igHits}건`}
                           >
                             ✅ {r.coDocs}건
                             {r.igHits > 0 && (
-                              <span className="font-semibold text-[#7aa33f]">IG {r.igHits}</span>
+                              <span className="font-semibold text-[#00723F]">IG {r.igHits}</span>
                             )}
                           </span>
                         ) : (
                           <span
-                            className="inline-flex items-center gap-1 rounded-full bg-[#f0eee9] px-2 py-0.5 text-[11px] font-semibold text-muted"
+                            className="inline-flex items-center gap-1 rounded-[3px] bg-[#E9E3D2] px-2 py-0.5 text-[11px] font-semibold text-muted"
                             title={`YouTube ${r.ytHits}건 · Instagram 캡션 ${r.igHits}건 — 검색만 함께 오름(시즌·프로모션 노이즈 의심)`}
                           >
                             ⚠️ {r.coDocs}건
                           </span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-[#3b382f]">
+                      <td className="px-3 py-2 text-right tabular-nums text-[#0B0B0A]">
                         {formatCount(r.volumeTotal)}
                       </td>
                       <td

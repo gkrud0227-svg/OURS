@@ -46,9 +46,9 @@ const WEIGHT_DEMO: { term: string; firstSeenAt: string; source: string }[] = [
 ];
 
 const TONE = {
-  hit: "bg-accent-soft text-accent",
+  hit: "bg-rise text-ink",
   dud: "bg-down-soft text-down",
-  pending: "bg-[#f0eee9] text-muted",
+  pending: "bg-[#E9E3D2] text-muted",
 } as const;
 
 const LABEL_KO = { hit: "적중(hit)", dud: "오탐(dud)", pending: "관찰 중" } as const;
@@ -127,11 +127,11 @@ export default function LabelPage() {
     <div className="space-y-7">
       <header>
         <div className="mb-2.5 flex items-center gap-2.5">
-          <h1 className="text-[26px] font-extrabold tracking-[-0.035em]">발굴 라벨링</h1>
-          <span className="rounded-full bg-accent-soft px-2.5 py-[3px] text-[11px] font-bold text-accent">
+          <h1 className="text-[40px] font-black leading-[1.05] tracking-[-0.045em] text-ink">발굴 라벨링</h1>
+          <span className="rounded-[3px] border-[1.5px] border-ink px-2.5 py-[3px] text-[11px] font-bold text-ink">
             오탐률·정밀도
           </span>
-          <span className="rounded-full bg-[#fbf3de] px-2.5 py-[3px] text-[11px] font-bold text-[#8a6a00]">
+          <span className="rounded-[3px] bg-[#E9E3D2] px-2.5 py-[3px] text-[11px] font-bold text-[#5C5849]">
             1단계 프로토타입
           </span>
         </div>
@@ -145,10 +145,10 @@ export default function LabelPage() {
       </header>
 
       {/* 데모 러너 */}
-      <section className="rounded-2xl border border-line bg-white p-5">
+      <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
         <h2 className="mb-1 text-sm font-semibold text-muted-strong">데모 — 개념 확인</h2>
         <p className="mb-3 text-xs leading-relaxed text-muted">
-          한 줄에 <code className="rounded bg-[#f0eee9] px-1">키워드, 발견일(YYYY-MM-DD)</code>. 과거
+          한 줄에 <code className="rounded bg-[#E9E3D2] px-1">키워드, 발견일(YYYY-MM-DD)</code>. 과거
           사례를 &ldquo;그 부상 직전에 발견했다면&rdquo;으로 넣어 봅니다. 히트(탕후루 등)는 hit,
           일반어(책상 등)는 dud로 찍혀야 개념이 도는 겁니다. <b className="font-medium">실제 로그는 건드리지
           않습니다.</b>
@@ -157,21 +157,20 @@ export default function LabelPage() {
           value={demoText}
           onChange={(e) => setDemoText(e.target.value)}
           rows={6}
-          className="mb-3 w-full rounded-[10px] border border-line p-3 font-mono text-[12.5px] outline-none focus:border-accent-bright"
+          className="mb-3 w-full rounded-[4px] border-[1.5px] border-line p-3 font-mono text-[12.5px] outline-none focus:border-accent-bright"
         />
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={() => run("demo")}
             disabled={loading}
-            style={{ background: "linear-gradient(145deg,#5a9b12,#4e8b10)" }}
-            className="h-10 rounded-[10px] px-5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
+            className="h-10 rounded-[4px] px-5 text-sm font-bold text-on-dark bg-ink shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
           >
             {loading && mode === "demo" ? "라벨링 중…" : "데모 라벨링"}
           </button>
           <button
             onClick={() => run("log")}
             disabled={loading}
-            className="h-10 rounded-[10px] border border-accent-bright px-5 text-sm font-bold text-accent transition-colors hover:bg-accent-soft disabled:opacity-60"
+            className="h-10 rounded-[4px] border border-accent-bright px-5 text-sm font-bold text-accent transition-colors hover:bg-mutedbg disabled:opacity-60"
           >
             {loading && mode === "log" ? "라벨링 중…" : "실제 로그 라벨링"}
           </button>
@@ -190,9 +189,9 @@ export default function LabelPage() {
         onDemo={() => recompute(WEIGHT_DEMO)}
       />
 
-      {error && <div className="rounded-xl bg-down-soft px-4 py-3 text-sm text-down">{error}</div>}
+      {error && <div className="rounded-[5px] bg-down-soft px-4 py-3 text-sm text-down">{error}</div>}
       {data?.note && !error && (
-        <div className="rounded-xl bg-[#fbf3de] px-4 py-3 text-sm text-[#8a6a00]">{data.note}</div>
+        <div className="rounded-[5px] bg-[#E9E3D2] px-4 py-3 text-sm text-[#5C5849]">{data.note}</div>
       )}
 
       {s && (
@@ -220,7 +219,7 @@ export default function LabelPage() {
             </div>
           )}
 
-          <section className="rounded-2xl border border-line bg-white p-5">
+          <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
             <h2 className="mb-3 text-sm font-semibold text-muted-strong">라벨링 결과</h2>
             <div className="nt-scroll overflow-x-auto">
               <table className="w-full min-w-[820px] border-collapse text-sm">
@@ -246,7 +245,7 @@ export default function LabelPage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-line bg-white p-5 text-xs leading-relaxed text-muted">
+          <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5 text-xs leading-relaxed text-muted">
             <h3 className="mb-2 text-sm font-semibold text-muted-strong">읽는 법 · 한계</h3>
             <ul className="space-y-1.5">
               <li>
@@ -276,7 +275,7 @@ function rank(r: LabelResult): number {
 
 function ResultRow({ r }: { r: LabelResult }) {
   return (
-    <tr className="border-b border-[#f0eee9] last:border-0">
+    <tr className="border-b border-[#E9E3D2] last:border-0">
       <td className="py-3 pr-2 font-semibold text-accent-ink">{r.term}</td>
       <td className="py-3 text-[13px] text-muted-strong">{r.firstSeenAt.slice(0, 10)}</td>
       <td className="py-3 text-[13px] text-muted">{r.source ?? "—"}</td>
@@ -288,7 +287,7 @@ function ResultRow({ r }: { r: LabelResult }) {
       </td>
       <td className="py-3 text-[12px] text-muted">{r.reason}</td>
       <td className="py-3 text-center">
-        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${TONE[r.label]}`}>
+        <span className={`rounded-[3px] px-2.5 py-1 text-xs font-bold ${TONE[r.label]}`}>
           {LABEL_KO[r.label]}
         </span>
       </td>
@@ -314,7 +313,7 @@ function WeightsPanel({
     (Object.keys(weights.bySource).length === 0 && Object.keys(weights.byNovel).length === 0);
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-5">
+    <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-muted-strong">
           학습된 신호 가중치 <span className="font-normal text-muted">(3단계 — 발굴 점수에 반영)</span>
@@ -323,15 +322,14 @@ function WeightsPanel({
           <button
             onClick={onDemo}
             disabled={recomputing}
-            style={{ background: "linear-gradient(145deg,#5a9b12,#4e8b10)" }}
-            className="h-9 rounded-[10px] px-3.5 text-[12.5px] font-bold text-white shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-50"
+            className="h-9 rounded-[4px] px-3.5 text-[12.5px] font-bold text-on-dark bg-ink shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-50"
           >
             {recomputing ? "학습 중…" : "데모 학습"}
           </button>
           <button
             onClick={onRecompute}
             disabled={recomputing}
-            className="h-9 rounded-[10px] border border-accent-bright px-3.5 text-[12.5px] font-bold text-accent transition-colors hover:bg-accent-soft disabled:opacity-50"
+            className="h-9 rounded-[4px] border border-accent-bright px-3.5 text-[12.5px] font-bold text-accent transition-colors hover:bg-mutedbg disabled:opacity-50"
           >
             {recomputing ? "재학습 중…" : "실제 로그로 재학습"}
           </button>
@@ -346,7 +344,7 @@ function WeightsPanel({
       {msg && <p className="mb-2 text-xs text-accent-ink">{msg}</p>}
 
       {neutral ? (
-        <p className="rounded-xl bg-[#f0eee9] px-4 py-3 text-xs leading-relaxed text-muted-strong">
+        <p className="rounded-[5px] bg-[#E9E3D2] px-4 py-3 text-xs leading-relaxed text-muted-strong">
           아직 <b className="font-semibold">학습 전</b> — 성숙 라벨이 부족해(또는 로그가 비어) 모든 가중치가{" "}
           <b className="font-semibold">×1.0(중립)</b>입니다. 발굴이 쌓이고 라벨이 성숙하면 여기 배수가
           움직입니다.
@@ -380,11 +378,11 @@ function WeightChips({ title, map }: { title: string; map: Record<string, number
           {entries.map(([k, w]) => (
             <span
               key={k}
-              className={`rounded-full border px-2.5 py-1 text-[12px] font-semibold ${
+              className={`rounded-[3px] border px-2.5 py-1 text-[12px] font-semibold ${
                 w > 1.02
-                  ? "border-[#c9e09a] bg-accent-soft text-accent-ink"
+                  ? "border-[#00C26A] bg-rise text-ink"
                   : w < 0.98
-                    ? "border-[#e6c3ae] bg-down-soft text-down"
+                    ? "border-[#8A8676] bg-down-soft text-down"
                     : "border-line text-muted-strong"
               }`}
             >
@@ -399,7 +397,7 @@ function WeightChips({ title, map }: { title: string; map: Record<string, number
 
 function BucketTable({ title, rows }: { title: string; rows: BucketStat[] }) {
   return (
-    <section className="rounded-2xl border border-line bg-white p-5">
+    <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
       <h3 className="mb-3 text-sm font-semibold text-muted-strong">{title}</h3>
       {rows.length === 0 ? (
         <p className="text-xs text-muted">성숙 표본 없음</p>
@@ -416,7 +414,7 @@ function BucketTable({ title, rows }: { title: string; rows: BucketStat[] }) {
           </thead>
           <tbody>
             {rows.map((b) => (
-              <tr key={b.key} className="border-b border-[#f0eee9] last:border-0">
+              <tr key={b.key} className="border-b border-[#E9E3D2] last:border-0">
                 <td className="py-2 font-medium text-muted-strong">{b.key}</td>
                 <td className="py-2 text-right tabular-nums text-muted">{b.matured}</td>
                 <td className="py-2 text-right tabular-nums text-accent">{b.hit}</td>
@@ -446,13 +444,11 @@ function Kpi({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${emphasis ? "border-accent-bright/40 bg-accent-soft/40" : "border-line bg-white"}`}
+      className={`rounded-[5px] border-[1.5px] border-ink p-4 ${emphasis ? "bg-rise" : "bg-surface"}`}
     >
-      <p className="text-[12.5px] font-semibold text-muted-strong">{label}</p>
-      <p className={`mt-1.5 text-2xl font-extrabold leading-none tracking-tight ${emphasis ? "text-accent" : ""}`}>
-        {value}
-      </p>
-      <p className="mt-2 truncate text-xs text-muted">{sub}</p>
+      <p className={`text-[12.5px] font-bold ${emphasis ? "text-ink" : "text-ink-2"}`}>{label}</p>
+      <p className="cb-num mt-1.5 text-[28px] leading-none tracking-[-0.04em] text-ink">{value}</p>
+      <p className={`mt-2 truncate text-xs ${emphasis ? "text-rise-ink" : "text-ink-4"}`}>{sub}</p>
     </div>
   );
 }

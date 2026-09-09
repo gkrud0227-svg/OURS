@@ -9,7 +9,7 @@ type Msg = { kind: "ok" | "error"; text: string } | null;
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-neutral-50 px-3 py-2.5">
+    <div className="rounded-[5px] bg-neutral-50 px-3 py-2.5">
       <p className="text-xs text-neutral-400">{label}</p>
       <p className="mt-0.5 text-base font-semibold tabular-nums">{value}</p>
     </div>
@@ -46,7 +46,7 @@ export function SocialPanels({ keyword }: { keyword: Keyword }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* YouTube */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+      <section className="rounded-[5px] border border-neutral-200 bg-surface p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-medium text-neutral-700">
             ▶ YouTube 신호
@@ -59,7 +59,7 @@ export function SocialPanels({ keyword }: { keyword: Keyword }) {
           <button
             onClick={onYouTube}
             disabled={refreshing}
-            className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs transition-colors hover:bg-neutral-50 disabled:opacity-50"
+            className="rounded-[3px] border border-neutral-200 px-3 py-1.5 text-xs transition-colors hover:bg-neutral-50 disabled:opacity-50"
           >
             {refreshing ? "수집 중…" : yt ? "다시 수집" : "수집"}
           </button>
@@ -67,10 +67,10 @@ export function SocialPanels({ keyword }: { keyword: Keyword }) {
 
         {ytMsg && (
           <p
-            className={`mb-3 rounded-lg px-3 py-2 text-xs ${
+            className={`mb-3 rounded-[3px] px-3 py-2 text-xs ${
               ytMsg.kind === "error"
                 ? "bg-red-50 text-red-600"
-                : "bg-accent-soft text-accent-ink"
+                : "bg-rise text-ink"
             }`}
           >
             {ytMsg.text}
@@ -93,7 +93,7 @@ export function SocialPanels({ keyword }: { keyword: Keyword }) {
                 href={`https://www.youtube.com/watch?v=${yt.topVideo.videoId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 block rounded-xl border border-neutral-100 p-3 text-sm transition-colors hover:bg-neutral-50"
+                className="mt-3 block rounded-[5px] border border-neutral-100 p-3 text-sm transition-colors hover:bg-neutral-50"
               >
                 <p className="text-xs text-neutral-400">
                   최고 조회 영상 · {formatCount(yt.topVideo.views)}회
@@ -116,7 +116,7 @@ export function SocialPanels({ keyword }: { keyword: Keyword }) {
       </section>
 
       {/* Instagram */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+      <section className="rounded-[5px] border border-neutral-200 bg-surface p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-medium text-neutral-700">
             # Instagram 신호
@@ -129,7 +129,7 @@ export function SocialPanels({ keyword }: { keyword: Keyword }) {
           <button
             onClick={onInstagram}
             disabled={refreshing}
-            className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs transition-colors hover:bg-neutral-50 disabled:opacity-50"
+            className="rounded-[3px] border border-neutral-200 px-3 py-1.5 text-xs transition-colors hover:bg-neutral-50 disabled:opacity-50"
           >
             {refreshing ? "수집 중…" : ig ? "다시 수집" : "수집"}
           </button>
@@ -137,10 +137,10 @@ export function SocialPanels({ keyword }: { keyword: Keyword }) {
 
         {igMsg && (
           <p
-            className={`mb-3 rounded-lg px-3 py-2 text-xs ${
+            className={`mb-3 rounded-[3px] px-3 py-2 text-xs ${
               igMsg.kind === "error"
                 ? "bg-red-50 text-red-600"
-                : "bg-accent-soft text-accent-ink"
+                : "bg-rise text-ink"
             }`}
           >
             {igMsg.text}
@@ -160,7 +160,7 @@ export function SocialPanels({ keyword }: { keyword: Keyword }) {
                 href={ig.topMedia.permalink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 block rounded-xl border border-neutral-100 p-3 text-sm transition-colors hover:bg-neutral-50"
+                className="mt-3 block rounded-[5px] border border-neutral-100 p-3 text-sm transition-colors hover:bg-neutral-50"
               >
                 <p className="text-xs text-neutral-400">
                   최고 좋아요 게시물 · {formatCount(ig.topMedia.likes)}

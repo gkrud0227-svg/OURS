@@ -30,9 +30,9 @@ type Mode = "discover" | "analyze";
  * "기획 시점"만 눈에 띄게 하고, 나머지는 조용히 둔다.
  */
 const GROUP_STYLE: Record<InflowGroup, string> = {
-  opportunity: "bg-accent text-white",
-  candidate: "border border-line text-muted-strong",
-  mature: "bg-[#f0eee9] text-muted",
+  opportunity: "bg-ink text-on-dark",
+  candidate: "border-[1.5px] border-line text-muted-strong",
+  mature: "bg-[#E9E3D2] text-muted",
   unknown: "border border-dashed border-line text-muted",
 };
 
@@ -67,7 +67,7 @@ function inflowCell(row: InflowRow | undefined, loading: boolean) {
   return (
     <span className="cursor-help" title={title}>
       <span
-        className={`inline-flex rounded-full px-2 py-[2px] text-[10.5px] font-bold ${GROUP_STYLE[group]}`}
+        className={`inline-flex rounded-[3px] px-2 py-[2px] text-[10.5px] font-bold ${GROUP_STYLE[group]}`}
       >
         {groupMeta.label}
       </span>
@@ -281,8 +281,8 @@ export default function GlobalPage() {
     <div className="space-y-7">
       <header>
         <div className="mb-2.5 flex items-center gap-2.5">
-          <h1 className="text-[26px] font-extrabold tracking-[-0.035em]">해외 트렌드</h1>
-          <span className="rounded-full bg-accent-soft px-2.5 py-[3px] text-[11px] font-bold text-accent">
+          <h1 className="text-[40px] font-black leading-[1.05] tracking-[-0.045em] text-ink">해외 트렌드</h1>
+          <span className="rounded-[3px] bg-rise px-2.5 py-[3px] text-[11px] font-bold text-ink">
             MVP
           </span>
         </div>
@@ -297,7 +297,7 @@ export default function GlobalPage() {
 
       {/* 모드 · 국가 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex rounded-[10px] border border-line bg-white p-1">
+        <div className="inline-flex gap-[2px] rounded-[4px] border-[1.5px] border-ink bg-ink p-[2px]">
           {(
             [
               ["discover", "① 키워드 발굴"],
@@ -307,8 +307,8 @@ export default function GlobalPage() {
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`rounded-lg px-4 py-1.5 text-[13px] font-bold transition-colors ${
-                mode === m ? "bg-accent text-white" : "text-muted hover:text-muted-strong"
+              className={`cb-row-hover rounded-[2px] px-4 py-1.5 text-[13px] font-bold ${
+                mode === m ? "bg-rise text-ink" : "bg-surface text-ink-2 hover:bg-mutedbg"
               }`}
             >
               {label}
@@ -318,7 +318,7 @@ export default function GlobalPage() {
         <select
           value={region}
           onChange={(e) => changeRegion(e.target.value)}
-          className="h-10 rounded-[10px] border border-line bg-white px-3 text-[13px] font-semibold outline-none focus:border-accent-bright"
+          className="h-10 rounded-[4px] border-[1.5px] border-line bg-surface px-3 text-[13px] font-semibold outline-none focus:border-accent-bright"
         >
           {GLOBAL_REGIONS.map((g) => (
             <option key={g.code} value={g.code}>
@@ -329,7 +329,7 @@ export default function GlobalPage() {
       </div>
 
       {regionMeta?.note && (
-        <div className="rounded-xl bg-[#fbf3de] px-4 py-3 text-xs leading-relaxed text-[#8a6a00]">
+        <div className="rounded-[5px] bg-[#E9E3D2] px-4 py-3 text-xs leading-relaxed text-[#5C5849]">
           <b className="font-bold">{regionMeta.label} 주의</b> — {regionMeta.note}
         </div>
       )}
@@ -338,16 +338,16 @@ export default function GlobalPage() {
         <>
           <form
             onSubmit={runDiscover}
-            className="rounded-2xl border border-line bg-white p-4"
+            className="rounded-[5px] border-[1.5px] border-line bg-surface p-4"
           >
             <label className="mb-2 block text-[12.5px] font-semibold text-muted-strong">
               시드 카테고리 <span className="font-normal text-muted">(쉼표 구분 · 최대 4개)</span>
             </label>
             <p className="mb-2.5 text-xs text-muted">
               카테고리에 <b className="font-semibold text-muted-strong">의도어</b>(viral · trending · new)를
-              꼭 붙이세요. <code className="rounded bg-[#f0eee9] px-1">dessert</code> 만 넣으면 신규 업로드가
+              꼭 붙이세요. <code className="rounded bg-[#E9E3D2] px-1">dessert</code> 만 넣으면 신규 업로드가
               무작위라 트렌드가 안 잡히고,{" "}
-              <code className="rounded bg-[#f0eee9] px-1">viral dessert</code> 로 바꾸면 같은 조건에서 5배 넘게
+              <code className="rounded bg-[#E9E3D2] px-1">viral dessert</code> 로 바꾸면 같은 조건에서 5배 넘게
               잡힙니다.
             </p>
             <div className="flex flex-wrap items-center gap-2.5">
@@ -355,18 +355,17 @@ export default function GlobalPage() {
                 value={seedText}
                 onChange={(e) => setSeedText(e.target.value)}
                 placeholder="viral dessert, trending snack, new bakery"
-                className="h-10 flex-1 min-w-[260px] rounded-[10px] border border-line px-3.5 text-sm outline-none focus:border-accent-bright"
+                className="h-10 flex-1 min-w-[260px] rounded-[4px] border-[1.5px] border-line px-3.5 text-sm outline-none focus:border-accent-bright"
               />
               <button
                 type="submit"
                 disabled={discovering}
                 title="유튜브 API 쿼터를 사용합니다 (시드 1개당 약 900 units)"
-                style={{ background: "linear-gradient(145deg,#5a9b12,#4e8b10)" }}
-                className="flex h-10 items-center gap-2 rounded-[10px] px-5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
+                className="flex h-10 items-center gap-2 rounded-[4px] px-5 text-sm font-bold text-on-dark bg-ink shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
               >
                 {discovering ? "발굴 중…" : "키워드 발굴"}
                 {!discovering && (
-                  <span className="rounded bg-white/20 px-1.5 py-[1px] text-[10px] font-bold text-white">
+                  <span className="rounded bg-on-dark/20 px-1.5 py-[1px] text-[10px] font-bold text-on-dark">
                     쿼터
                   </span>
                 )}
@@ -381,11 +380,11 @@ export default function GlobalPage() {
           </form>
 
           {discoverError && (
-            <div className="rounded-xl bg-down-soft px-4 py-3 text-sm text-down">{discoverError}</div>
+            <div className="rounded-[5px] bg-down-soft px-4 py-3 text-sm text-down">{discoverError}</div>
           )}
 
           {!discover ? (
-            <div className="rounded-2xl border border-dashed border-[#d8d3c9] bg-white px-4 py-16 text-center text-sm text-muted">
+            <div className="rounded-[5px] border border-dashed border-[#8A8676] bg-surface px-4 py-16 text-center text-sm text-muted">
               시드 카테고리를 넣고{" "}
               <b className="font-semibold text-muted-strong">키워드 발굴</b>을 눌러보세요.
             </div>
@@ -399,27 +398,27 @@ export default function GlobalPage() {
               </div>
 
               {discover.counts.baselineChannels < 200 && (
-                <div className="rounded-xl bg-[#fbf3de] px-4 py-3 text-xs leading-relaxed text-[#8a6a00]">
+                <div className="rounded-[5px] bg-[#E9E3D2] px-4 py-3 text-xs leading-relaxed text-[#5C5849]">
                   <b className="font-bold">기준선이 작습니다</b> — {discover.counts.baselineChannels}개 채널.
                   흔한 단어까지 &ldquo;과거 0건&rdquo;으로 잡혀 <b className="font-bold">신조어 판정이 불안정</b>합니다.
                   시드를 늘리면 기준선이 함께 커집니다. (권장 200채널 이상)
                 </div>
               )}
 
-              <section className="rounded-2xl border border-line bg-white p-5">
+              <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-sm font-semibold text-muted-strong">
                     해외 급상승 후보 <span className="font-normal text-muted">(급증 배수 순)</span>
                   </h2>
                   <span className="text-xs text-muted">최근 {discover.window.recentDays}일 · {discover.region}</span>
                 </div>
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#f7f6f1] px-3 py-2">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-[5px] bg-[#FCFAF3] px-3 py-2">
                   <p className="text-xs text-muted">
                     <b className="font-semibold text-muted-strong">식품 맥락 우선</b> — 식품어와 함께 나온 후보는
                     위로, 게임·챌린지 맥락은 아래로. <b className="font-semibold text-muted-strong">아무것도
                     제거하지 않습니다</b> (신조어가 죽지 않도록).
                   </p>
-                  <div className="inline-flex shrink-0 rounded-lg border border-line bg-white p-0.5">
+                  <div className="inline-flex shrink-0 rounded-[3px] border-[1.5px] border-line bg-surface p-0.5">
                     {(
                       [
                         [true, "식품 맥락 우선"],
@@ -429,8 +428,8 @@ export default function GlobalPage() {
                       <button
                         key={label}
                         onClick={() => setFoodFirst(v)}
-                        className={`rounded-md px-2.5 py-1 text-[11.5px] font-bold transition-colors ${
-                          foodFirst === v ? "bg-accent text-white" : "text-muted hover:text-muted-strong"
+                        className={`rounded-[3px] px-2.5 py-1 text-[11.5px] font-bold transition-colors ${
+                          foodFirst === v ? "bg-ink text-on-dark" : "text-muted hover:text-muted-strong"
                         }`}
                       >
                         {label}
@@ -447,15 +446,15 @@ export default function GlobalPage() {
                   <div className="nt-scroll overflow-x-auto">
                     <table className="w-full min-w-[960px] border-collapse text-sm">
                       <thead>
-                        <tr className="border-b border-line text-left text-xs text-muted">
-                          <th className="w-12 py-2.5 font-semibold">#</th>
-                          <th className="py-2.5 font-semibold">키워드</th>
-                          <th className="w-40 py-2.5 font-semibold">점수</th>
-                          <th className="w-24 py-2.5 text-right font-semibold">급증 배수</th>
-                          <th className="w-28 py-2.5 text-right font-semibold">영상수 (채널)</th>
-                          <th className="w-32 py-2.5 font-semibold">국내 유입</th>
-                          <th className="w-28 py-2.5 text-right font-semibold">조회/구독</th>
-                          <th className="w-28 py-2.5 text-right font-semibold">조회수 (참고)</th>
+                        <tr className="bg-ink text-left">
+                          <th className="cb-th w-12 whitespace-nowrap px-3 py-[9px]">#</th>
+                          <th className="cb-th whitespace-nowrap px-3 py-[9px]">키워드</th>
+                          <th className="cb-th w-40 whitespace-nowrap px-3 py-[9px]">점수</th>
+                          <th className="cb-th w-24 whitespace-nowrap px-3 py-[9px] text-right">급증 배수</th>
+                          <th className="cb-th w-28 whitespace-nowrap px-3 py-[9px] text-right">영상수 (채널)</th>
+                          <th className="cb-th w-32 whitespace-nowrap px-3 py-[9px]">국내 유입</th>
+                          <th className="cb-th w-28 whitespace-nowrap px-3 py-[9px] text-right">조회/구독</th>
+                          <th className="cb-th w-28 whitespace-nowrap px-3 py-[9px] text-right">조회수 (참고)</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -468,12 +467,12 @@ export default function GlobalPage() {
                           <tr
                             key={r.term}
                             onClick={() => analyzeTerm(r.term.replace(/^#/, ""))}
-                            className="cursor-pointer border-b border-[#f0eee9] transition-colors last:border-0 hover:bg-[#fcfbf6]"
+                            className="cursor-pointer border-b border-[#E9E3D2] transition-colors last:border-0 hover:bg-[#FCFAF3]"
                           >
                             <td className="py-2.5">
                               <span
-                                className={`inline-flex h-6 w-6 items-center justify-center rounded-lg text-[11px] font-bold ${
-                                  i < 3 ? "bg-accent text-white" : "bg-[#f0eee9] text-muted-strong"
+                                className={`inline-flex h-6 w-6 items-center justify-center rounded-[3px] text-[11px] font-bold ${
+                                  i < 3 ? "bg-ink text-on-dark" : "bg-[#E9E3D2] text-muted-strong"
                                 }`}
                               >
                                 {i + 1}
@@ -485,10 +484,10 @@ export default function GlobalPage() {
                                 <span
                                   key={b}
                                   title={BADGE_META[b].desc}
-                                  className={`ml-1.5 cursor-help rounded-full px-2 py-[2px] text-[10.5px] font-bold ${
+                                  className={`ml-1.5 cursor-help rounded-[3px] px-2 py-[2px] text-[10.5px] font-bold ${
                                     b === "media"
-                                      ? "bg-[#eef2fb] text-[#3f5d8f]"
-                                      : "bg-[#f0eee9] text-muted-strong"
+                                      ? "bg-[#E9E3D2] text-[#4A463C]"
+                                      : "bg-[#E9E3D2] text-muted-strong"
                                   }`}
                                 >
                                   {BADGE_META[b].label}
@@ -497,7 +496,7 @@ export default function GlobalPage() {
                               {c?.novel && (
                                 <span
                                   title="과거 기준선의 어느 채널도 쓰지 않던 용어 — 신조어 가능성"
-                                  className="ml-1.5 cursor-help rounded-full bg-accent-soft px-2 py-[2px] text-[10.5px] font-bold text-accent"
+                                  className="ml-1.5 cursor-help rounded-[3px] bg-mutedbg px-2 py-[2px] text-[10.5px] font-bold text-ink-3"
                                 >
                                   신조어
                                 </span>
@@ -505,7 +504,7 @@ export default function GlobalPage() {
                               {c?.hashtag && (
                                 <span
                                   title="해시태그로 등장 — 트렌드 명명이 이미 굳어졌다는 신호"
-                                  className="ml-1.5 cursor-help rounded-full border border-[#dfebc6] px-2 py-[2px] text-[10.5px] font-bold text-[#7aa33f]"
+                                  className="ml-1.5 cursor-help rounded-[3px] border border-chip px-2 py-[2px] text-[10.5px] font-bold text-ink-2"
                                 >
                                   태그
                                 </span>
@@ -513,7 +512,7 @@ export default function GlobalPage() {
                               {c?.contextTag === "nonfood" && (
                                 <span
                                   title={`이 용어가 나온 영상 제목이 게임·챌린지 등 비식품 맥락입니다 (식품어 포함 ${Math.round((c.foodShare ?? 0) * 100)}%). 제거하지 않고 순위만 내렸습니다.`}
-                                  className="ml-1.5 cursor-help rounded-full bg-down-soft px-2 py-[2px] text-[10.5px] font-bold text-down"
+                                  className="ml-1.5 cursor-help rounded-[3px] border border-chip px-2 py-[2px] text-[10.5px] font-bold text-ink-3"
                                 >
                                   비식품?
                                 </span>
@@ -521,7 +520,7 @@ export default function GlobalPage() {
                               {c?.contextTag === "food" && (
                                 <span
                                   title={`이 용어가 나온 영상 제목의 ${Math.round((c.foodShare ?? 0) * 100)}%가 식품 맥락입니다.`}
-                                  className="ml-1.5 cursor-help rounded-full border border-[#dfebc6] px-2 py-[2px] text-[10.5px] font-bold text-[#7aa33f]"
+                                  className="ml-1.5 cursor-help rounded-[3px] border border-chip px-2 py-[2px] text-[10.5px] font-bold text-ink-2"
                                 >
                                   식품
                                 </span>
@@ -538,12 +537,12 @@ export default function GlobalPage() {
                             <td className="py-2.5">
                               {c ? (
                                 <div className="flex items-center gap-2">
-                                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#f0eee9]">
+                                  <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-[#E9E3D2]">
                                     <div
                                       className="h-full rounded-full"
                                       style={{
                                         width: `${Math.max(c.score, 3)}%`,
-                                        background: i < 3 ? "linear-gradient(90deg,#82bc00,#4e8b10)" : "#c9dfa3",
+                                        background: "#0B0B0A",
                                       }}
                                     />
                                   </div>
@@ -553,8 +552,12 @@ export default function GlobalPage() {
                                 <span className="text-[11px] text-muted">—</span>
                               )}
                             </td>
-                            <td className="py-2.5 text-right text-[13px] font-bold tabular-nums text-accent">
-                              {c ? `×${c.lift}` : <span className="font-normal text-muted">—</span>}
+                            <td className="py-2.5 pr-3 text-right">
+                              {c ? (
+                                <span className="cb-num text-[18px] tracking-[-0.03em] text-ink">×{c.lift}</span>
+                              ) : (
+                                <span className="text-muted">—</span>
+                              )}
                             </td>
                             <td
                               title={
@@ -595,7 +598,7 @@ export default function GlobalPage() {
                 <ul className="mt-5 space-y-1 border-t border-line pt-4 text-xs leading-relaxed text-muted">
                   <li>
                     <b className="font-semibold text-muted-strong">급증 배수(lift)</b> = 과거보다 몇 배 더 많은
-                    채널이 이 말을 쓰는가. <code className="rounded bg-[#f0eee9] px-1">recipe</code> 처럼 원래도
+                    채널이 이 말을 쓰는가. <code className="rounded bg-[#E9E3D2] px-1">recipe</code> 처럼 원래도
                     흔한 말은 1 근처라 밀려납니다. <b className="font-semibold text-muted-strong">배수가 1보다
                     작으면 지고 있는 트렌드</b>입니다.
                   </li>
@@ -607,9 +610,9 @@ export default function GlobalPage() {
                   </li>
                   <li>
                     후보는 <b className="font-semibold text-muted-strong">제목 + 설명란 앞부분</b>에서 뽑습니다.
-                    설명란 하단의 <code className="rounded bg-[#f0eee9] px-1">tags</code>·
-                    <code className="rounded bg-[#f0eee9] px-1">keywords</code>·
-                    <code className="rounded bg-[#f0eee9] px-1">disclaimer</code> 더미는 잘라내고, 흔한 일반어는
+                    설명란 하단의 <code className="rounded bg-[#E9E3D2] px-1">tags</code>·
+                    <code className="rounded bg-[#E9E3D2] px-1">keywords</code>·
+                    <code className="rounded bg-[#E9E3D2] px-1">disclaimer</code> 더미는 잘라내고, 흔한 일반어는
                     급증 배수(lift)가 알아서 밀어냅니다.
                   </li>
                   <li>
@@ -629,33 +632,32 @@ export default function GlobalPage() {
               const kw = keyword.trim();
               if (kw) void analyzeTerm(kw);
             }}
-            className="flex flex-wrap items-center gap-2.5 rounded-2xl border border-line bg-white p-4"
+            className="flex flex-wrap items-center gap-2.5 rounded-[5px] border-[1.5px] border-line bg-surface p-4"
           >
             <input
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="키워드 (예: dubai chocolate)"
-              className="h-10 flex-1 min-w-[220px] rounded-[10px] border border-line px-3.5 text-sm outline-none focus:border-accent-bright"
+              className="h-10 flex-1 min-w-[220px] rounded-[4px] border-[1.5px] border-line px-3.5 text-sm outline-none focus:border-accent-bright"
             />
             <button
               type="submit"
               disabled={loading}
-              style={{ background: "linear-gradient(145deg,#5a9b12,#4e8b10)" }}
-              className="h-10 rounded-[10px] px-5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
+              className="h-10 rounded-[4px] px-5 text-sm font-bold text-on-dark bg-ink shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
             >
               {loading ? "분석 중…" : "해외 신호 분석"}
             </button>
           </form>
 
-          {error && <div className="rounded-xl bg-down-soft px-4 py-3 text-sm text-down">{error}</div>}
+          {error && <div className="rounded-[5px] bg-down-soft px-4 py-3 text-sm text-down">{error}</div>}
           {data?.ytError && (
-            <div className="rounded-xl bg-[#fbf3de] px-4 py-3 text-xs text-[#8a6a00]">
+            <div className="rounded-[5px] bg-[#E9E3D2] px-4 py-3 text-xs text-[#5C5849]">
               YouTube 호출 실패 — Instagram 캡션만으로 분석했습니다. ({data.ytError.slice(0, 80)})
             </div>
           )}
 
           {!data ? (
-            <div className="rounded-2xl border border-dashed border-[#d8d3c9] bg-white px-4 py-16 text-center text-sm text-muted">
+            <div className="rounded-[5px] border border-dashed border-[#8A8676] bg-surface px-4 py-16 text-center text-sm text-muted">
               키워드를 고른 뒤{" "}
               <b className="font-semibold text-muted-strong">해외 신호 분석</b>을 눌러보세요.
             </div>
@@ -679,7 +681,7 @@ export default function GlobalPage() {
                   href={`https://www.youtube.com/watch?v=${data.youtube.topVideo.videoId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block rounded-2xl border border-line bg-white p-4 transition-colors hover:bg-[#fcfbf6]"
+                  className="block rounded-[5px] border-[1.5px] border-line bg-surface p-4 transition-colors hover:bg-[#FCFAF3]"
                 >
                   <p className="text-xs text-muted">
                     최고 조회 영상 · {formatCount(data.youtube.topVideo.views)}회
@@ -692,7 +694,7 @@ export default function GlobalPage() {
               )}
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <section className="rounded-2xl border border-line bg-white p-5">
+                <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-sm font-semibold text-muted-strong">
                       이유 태그 <span className="font-normal text-muted">(확산 이유 추정)</span>
@@ -706,7 +708,7 @@ export default function GlobalPage() {
                     </p>
                   ) : (
                     <>
-                      <div className="mb-4 rounded-xl bg-accent-soft px-4 py-3 text-[13px] text-accent-ink">
+                      <div className="mb-4 rounded-[5px] bg-rise px-4 py-3 text-[13px] text-ink">
                         주요 확산 이유: <b className="text-sm font-bold">{r.dominant}</b>{" "}
                         <span className="font-semibold">
                           — {activeReasons[0].docHits}건 ({Math.round(activeReasons[0].share * 100)}%)
@@ -719,12 +721,12 @@ export default function GlobalPage() {
                           return (
                             <div key={c.key} className="flex items-center gap-3">
                               <span className="w-24 shrink-0 text-[13px] font-semibold">{c.label}</span>
-                              <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#f0eee9]">
+                              <div className="h-2 flex-1 overflow-hidden rounded-[3px] bg-[#E9E3D2]">
                                 <div
                                   className="h-full rounded-full"
                                   style={{
                                     width: `${Math.max(pct, 3)}%`,
-                                    background: i === 0 ? "linear-gradient(90deg,#82bc00,#4e8b10)" : "#c9dfa3",
+                                    background: i === 0 ? "#00C26A" : "#00C26A",
                                   }}
                                 />
                               </div>
@@ -742,7 +744,7 @@ export default function GlobalPage() {
                   )}
                 </section>
 
-                <section className="rounded-2xl border border-line bg-white p-5">
+                <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
                   <div className="mb-1 flex items-center justify-between">
                     <h2 className="text-sm font-semibold text-muted-strong">
                       동반 키워드 <span className="font-normal text-muted">(실제 공출현)</span>
@@ -761,10 +763,10 @@ export default function GlobalPage() {
                         <span
                           key={t.term}
                           title={`${t.docs}건 (${Math.round(t.rate * 100)}%)에서 함께 등장`}
-                          className="inline-flex cursor-help items-center gap-1.5 rounded-full border border-[#dfebc6] bg-accent-soft px-3 py-1 text-[12.5px] font-semibold text-accent-ink"
+                          className="inline-flex cursor-help items-center gap-1.5 rounded-[3px] border border-[#00C26A] bg-rise px-3 py-1 text-[12.5px] font-semibold text-ink"
                         >
                           {t.term}
-                          <span className="text-[11px] font-bold text-[#7aa33f]">{t.docs}</span>
+                          <span className="text-[11px] font-bold text-[#00723F]">{t.docs}</span>
                         </span>
                       ))}
                     </div>
@@ -772,7 +774,7 @@ export default function GlobalPage() {
                 </section>
               </div>
 
-              <section className="rounded-2xl border border-line bg-white p-5">
+              <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
                 <h2 className="mb-2 text-sm font-semibold text-muted-strong">
                   Reddit 신호 <span className="font-normal text-muted">(해외 담론)</span>
                 </h2>
@@ -784,7 +786,7 @@ export default function GlobalPage() {
                     <Kpi label="평균 업보트" value={formatCount(reddit.stat.avgScore)} sub={`댓글 ${formatCount(reddit.stat.totalComments)}`} />
                   </div>
                 ) : (
-                  <p className="rounded-xl bg-[#f0eee9] px-4 py-3 text-xs text-muted-strong">
+                  <p className="rounded-[5px] bg-[#E9E3D2] px-4 py-3 text-xs text-muted-strong">
                     {redditNote ?? "Reddit 미설정"} — `.env.local`에 `REDDIT_CLIENT_ID`/`REDDIT_CLIENT_SECRET`를
                     넣으면 이 패널이 자동으로 채워집니다. (코드 수정 불필요)
                   </p>
@@ -800,7 +802,7 @@ export default function GlobalPage() {
 
 function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-2xl border border-line bg-white p-4">
+    <div className="rounded-[5px] border-[1.5px] border-line bg-surface p-4">
       <p className="text-[12.5px] font-semibold text-muted-strong">{label}</p>
       <p className="mt-1.5 text-2xl font-extrabold leading-none tracking-tight">{value}</p>
       <p className="mt-2 truncate text-xs text-muted">{sub}</p>

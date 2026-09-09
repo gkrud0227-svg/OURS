@@ -33,19 +33,19 @@ function NewsChip({ t, added, onAdd }: { t: NewsTerm; added: boolean; onAdd: () 
       onClick={onAdd}
       disabled={added}
       title={`${t.sources.join(" · ")}\n예: ${t.sample}`}
-      className={`cursor-help rounded-full border px-2.5 py-1 text-[12px] font-semibold transition-colors ${
+      className={`cursor-help rounded-[3px] border px-2.5 py-1 text-[12px] font-semibold transition-colors ${
         added
-          ? "border-line bg-[#f0eee9] text-muted"
+          ? "border-line bg-[#E9E3D2] text-muted"
           : t.novelty === "new" || t.novelty === "rising"
-            ? "border-[#e6c3ae] bg-[#fbeede] text-[#a5591f] hover:brightness-95"
+            ? "border-[#8A8676] bg-[#E9E3D2] text-[#5C5849] hover:brightness-95"
             : t.sources.length >= 3
-              ? "border-[#c9e09a] bg-accent-soft text-accent-ink hover:brightness-95"
-              : "border-[#dfebc6] text-[#4e8b10] hover:bg-accent-soft"
+              ? "border-[#00C26A] bg-rise text-ink hover:brightness-95"
+              : "border-[#00C26A] text-[#00723F] hover:bg-mutedbg"
       }`}
     >
       {added ? "✓ " : t.novelty === "new" ? "🆕 " : t.novelty === "rising" ? "📈 " : "+ "}
       {t.term}
-      <span className="ml-1 rounded bg-white/60 px-1 text-[10px] font-bold text-[#3e6db0]">
+      <span className="ml-1 rounded bg-surface/60 px-1 text-[10px] font-bold text-[#4A463C]">
         {t.sources.length}곳
       </span>
     </button>
@@ -69,21 +69,21 @@ function ValidatedChip({
       onClick={onAdd}
       disabled={added}
       title={`검색 ${STATUS_META[v.status].label}${v.volumeTotal ? ` · 월 검색량 ${v.volumeTotal.toLocaleString()}` : ""}`}
-      className={`cursor-help rounded-full border px-2.5 py-1 text-[12px] font-semibold transition-colors ${
+      className={`cursor-help rounded-[3px] border px-2.5 py-1 text-[12px] font-semibold transition-colors ${
         added
-          ? "border-line bg-[#f0eee9] text-muted"
+          ? "border-line bg-[#E9E3D2] text-muted"
           : rising
-            ? "border-[#c9e09a] bg-accent-soft text-accent-ink hover:brightness-95"
-            : "border-line text-muted-strong hover:bg-[#f2f0eb]"
+            ? "border-[#00C26A] bg-rise text-ink hover:brightness-95"
+            : "border-line text-muted-strong hover:bg-[#E9E3D2]"
       }`}
     >
       {added ? "✓ " : `${STATUS_META[v.status].emoji} `}
       {term}
       {rising && v.riseRate != null && (
-        <span className="ml-1 text-[10px] font-bold text-[#4e8b10]">+{Math.round(v.riseRate)}%</span>
+        <span className="ml-1 text-[10px] font-bold text-[#00723F]">+{Math.round(v.riseRate)}%</span>
       )}
       {v.volumeTotal > 0 && (
-        <span className="ml-1 rounded bg-white/60 px-1 text-[10px] font-bold text-[#3e6db0]">
+        <span className="ml-1 rounded bg-surface/60 px-1 text-[10px] font-bold text-[#4A463C]">
           {formatCount(v.volumeTotal)}
         </span>
       )}
@@ -212,8 +212,8 @@ export default function RadarPage() {
     <div className="space-y-7">
       <header>
         <div className="mb-2.5 flex items-center gap-2.5">
-          <h1 className="text-[26px] font-extrabold tracking-[-0.035em]">식품 뉴스 스캔</h1>
-          <span className="rounded-full bg-accent-soft px-2.5 py-[3px] text-[11px] font-bold text-accent">
+          <h1 className="text-[40px] font-black leading-[1.05] tracking-[-0.045em] text-ink">식품 뉴스 스캔</h1>
+          <span className="rounded-[3px] border-[1.5px] border-ink px-2.5 py-[3px] text-[11px] font-bold text-ink">
             국내·해외 매체
           </span>
         </div>
@@ -226,19 +226,19 @@ export default function RadarPage() {
 
       {msg && (
         <div
-          className={`rounded-xl px-4 py-3 text-sm ${
+          className={`rounded-[5px] px-4 py-3 text-sm ${
             msg.kind === "error"
               ? "bg-down-soft text-down"
               : msg.kind === "key"
-                ? "bg-[#fbf3de] text-[#8a6a00]"
-                : "bg-accent-soft text-accent-ink"
+                ? "bg-[#E9E3D2] text-[#5C5849]"
+                : "bg-rise text-ink"
           }`}
         >
           {msg.text}
         </div>
       )}
 
-      <section className="rounded-2xl border border-line bg-white p-5">
+      <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold text-muted-strong">식품 뉴스 스캔 (국내·해외)</h2>
@@ -254,8 +254,7 @@ export default function RadarPage() {
               <button
                 onClick={validateDomestic}
                 disabled={validating || newsLoading}
-                style={{ background: "linear-gradient(145deg,#5a9b12,#4e8b10)" }}
-                className="h-9 rounded-[10px] px-3.5 text-[12.5px] font-bold text-white shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-50"
+                className="h-9 rounded-[4px] px-3.5 text-[12.5px] font-bold text-on-dark bg-ink shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-50"
               >
                 {validating ? "검증 중…" : "국내 키워드 네이버 검증"}
               </button>
@@ -263,7 +262,7 @@ export default function RadarPage() {
             <button
               onClick={runNews}
               disabled={newsLoading}
-              className="h-9 rounded-[10px] border border-accent-bright px-3.5 text-[12.5px] font-bold text-accent transition-colors hover:bg-accent-soft disabled:opacity-50"
+              className="h-9 rounded-[4px] border border-accent-bright px-3.5 text-[12.5px] font-bold text-accent transition-colors hover:bg-mutedbg disabled:opacity-50"
             >
               {newsLoading ? "스캔 중…" : "지금 스캔"}
             </button>

@@ -27,7 +27,8 @@ export function formatCount(n: number | null | undefined): string {
 
 export function pctColor(v: number | null | undefined): string {
   if (v === null || v === undefined || Number.isNaN(v)) return "text-muted";
-  if (v > 0.05) return "text-accent-ink";
-  if (v < -0.05) return "text-down";
-  return "text-muted-strong";
+  // 상승만 그린. 하락·보합은 명도로 구분한다(그린은 상승 전용).
+  if (v > 0.05) return "text-rise-text";
+  if (v < -0.05) return "text-ink-3";
+  return "text-ink-2";
 }

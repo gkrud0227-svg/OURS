@@ -27,7 +27,8 @@ export function QuotaBadge() {
   if (!q) return null;
 
   const remainPct = Math.round((q.remaining / DAILY_QUOTA) * 100);
-  const color = q.remaining < 2000 ? "#dc2626" : q.remaining < 5000 ? "#d97706" : "#16a34a";
+  // 잔여가 넉넉할 때만 그린 — 그린은 "여유 있다(조건 통과)"는 신호다.
+  const color = q.remaining < 2000 ? "#0B0B0A" : q.remaining < 5000 ? "#5C5849" : "#00723F";
 
   return (
     <span
@@ -37,29 +38,29 @@ export function QuotaBadge() {
         alignItems: "center",
         gap: 6,
         padding: "4px 10px",
-        borderRadius: 999,
-        border: "1px solid #e5e7eb",
-        background: "#f9fafb",
+        borderRadius: 4,
+        border: "1.5px solid #0B0B0A",
+        background: "#FCFAF3",
         fontSize: 12,
-        color: "#6b7280",
+        color: "#6E6B62",
         whiteSpace: "nowrap",
       }}
     >
       <span aria-hidden>▮</span>
       YouTube 쿼터{" "}
-      <span style={{ color: "#9ca3af" }}>
+      <span style={{ color: "#6E6B62" }}>
         오늘 사용{" "}
-        <b style={{ color: "#374151", fontVariantNumeric: "tabular-nums" }}>
+        <b style={{ color: "#0B0B0A", fontVariantNumeric: "tabular-nums" }}>
           {q.spent.toLocaleString()}
         </b>
       </span>
-      <span style={{ color: "#d1d5db" }}>·</span>
-      <span style={{ color: "#9ca3af" }}>
+      <span style={{ color: "#C9C4B2" }}>·</span>
+      <span style={{ color: "#6E6B62" }}>
         잔여{" "}
         <b style={{ color, fontVariantNumeric: "tabular-nums" }}>{q.remaining.toLocaleString()}</b>{" "}
         ({remainPct}%)
       </span>
-      <span style={{ color: "#d1d5db" }}>/ {DAILY_QUOTA.toLocaleString()}</span>
+      <span style={{ color: "#C9C4B2" }}>/ {DAILY_QUOTA.toLocaleString()}</span>
     </span>
   );
 }

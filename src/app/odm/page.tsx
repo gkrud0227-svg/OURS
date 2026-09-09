@@ -25,11 +25,11 @@ import {
 type Mode = "company" | "foodType" | "product";
 
 const TONE: Record<"good" | "mid" | "bad" | "muted" | "unknown", string> = {
-  good: "bg-accent-soft text-accent",
-  mid: "bg-[#fbf3de] text-[#8a6a00]",
+  good: "bg-rise text-ink",
+  mid: "bg-[#E9E3D2] text-[#5C5849]",
   bad: "bg-down-soft text-down",
-  muted: "bg-[#f0eee9] text-muted-strong",
-  unknown: "bg-[#f0eee9] text-muted",
+  muted: "bg-[#E9E3D2] text-muted-strong",
+  unknown: "bg-[#E9E3D2] text-muted",
 };
 
 /** "업체명 제품명" 네이버 검색 URL. */
@@ -60,8 +60,14 @@ function ProductLink({ company, product }: { company: string; product: string })
 
 export default function OdmPage() {
   const [mode, setMode] = useState<Mode>("company");
-  /** 검색 화면 / 컨택 후보 화면 전환 */
-  const [view, setView] = useState<"search" | "saved">("search");
+  /*
+   * 검색 화면 / 컨택 후보 화면 전환.
+   * 기본은 **컨택 후보** — 이 화면에 다시 들어오는 이유는 대개 "아까 담아둔 업체를 다시
+   * 보려고" 라서, 빈 검색 폼보다 담아둔 목록이 먼저 나오는 편이 맞다.
+   * ⚠️ 트렌드 탭에서 ?type=·?term= 을 달고 넘어온 경우는 예외다 — 아래 마운트 effect 에서
+   *    검색 화면으로 되돌린다. 안 그러면 조회를 걸어놓고 다른 화면을 보여주게 된다.
+   */
+  const [view, setView] = useState<"search" | "saved">("saved");
   const [query, setQuery] = useState("");
   /** 제품명 탭 전용 — 선택적 업체명. 비우면 거래처 전체, 넣으면 그 업체 안에서만. */
   const [companyFilter, setCompanyFilter] = useState("");
@@ -87,6 +93,8 @@ export default function OdmPage() {
     const t = params.get("type");
     const from = params.get("term");
     if (from) setFromTerm(from);
+    // 트렌드에서 넘어온 조회는 검색 화면에서 결과를 보여줘야 한다.
+    if (t || from) setView("search");
     if (t) {
       setMode("foodType");
       setQuery(t);
@@ -183,8 +191,8 @@ export default function OdmPage() {
     <div className="space-y-7">
       <header>
         <div className="mb-2.5 flex items-center gap-2.5">
-          <h1 className="text-[26px] font-extrabold tracking-[-0.035em]">제조처 스크리닝</h1>
-          <span className="rounded-full bg-accent-soft px-2.5 py-[3px] text-[11px] font-bold text-accent">
+          <h1 className="text-[40px] font-black leading-[1.05] tracking-[-0.045em] text-ink">제조처 스크리닝</h1>
+          <span className="rounded-[3px] border-[1.5px] border-ink px-2.5 py-[3px] text-[11px] font-bold text-ink">
             식품안전나라
           </span>
         </div>
@@ -195,8 +203,20 @@ export default function OdmPage() {
         </p>
       </header>
 
-      {/* 상단 탭 — 검색 모드 3종 + 컨택 후보 보기 */}
-      <div className="inline-flex flex-wrap rounded-[10px] border border-line bg-white p-1">
+      {/*
+        상단 탭 — 컨택 후보(기본) + 검색 모드 3종.
+        검은 컨테이너 위에 2px 간격으로 탭을 얹어, 간격 자체가 구획선으로 읽히게 한다.
+      */}
+      <div className="inline-flex flex-wrap gap-[2px] rounded-[4px] border-[1.5px] border-ink bg-ink p-[2px]">
+        <button
+          type="button"
+          onClick={() => setView("saved")}
+          className={`cb-row-hover rounded-[2px] px-4 py-1.5 text-[13px] font-bold ${
+            view === "saved" ? "bg-rise text-ink" : "bg-surface text-ink-2 hover:bg-mutedbg"
+          }`}
+        >
+          컨택 후보{candidates.length > 0 ? ` ${candidates.length}` : ""}
+        </button>
         {(
           [
             ["company", "업체명으로 검색"],
@@ -211,31 +231,22 @@ export default function OdmPage() {
               setView("search");
               setMode(m);
             }}
-            className={`rounded-lg px-4 py-1.5 text-[13px] font-bold transition-colors ${
+            className={`cb-row-hover rounded-[2px] px-4 py-1.5 text-[13px] font-bold ${
               view === "search" && mode === m
-                ? "bg-accent text-white"
-                : "text-muted hover:text-muted-strong"
+                ? "bg-rise text-ink"
+                : "bg-surface text-ink-2 hover:bg-mutedbg"
             }`}
           >
             {label}
           </button>
         ))}
-        <button
-          type="button"
-          onClick={() => setView("saved")}
-          className={`rounded-lg px-4 py-1.5 text-[13px] font-bold transition-colors ${
-            view === "saved" ? "bg-accent text-white" : "text-muted hover:text-muted-strong"
-          }`}
-        >
-          컨택 후보{candidates.length > 0 ? ` ${candidates.length}` : ""}
-        </button>
       </div>
 
       {view === "search" && (
         <>
       {/* 트렌드 발굴에서 넘어온 맥락 */}
       {fromTerm && (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-accent-soft bg-accent-soft/40 px-4 py-3 text-sm text-accent-ink">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[4px] border-[1.5px] border-ink bg-surface px-4 py-3 text-sm text-ink">
           <Link href="/domestic" className="font-semibold underline underline-offset-2">
             국내 발굴
           </Link>
@@ -256,15 +267,19 @@ export default function OdmPage() {
       )}
 
       {/* 필수 안내 — 데이터 성격 */}
-      <div className="rounded-xl bg-[#fbf3de] px-4 py-3 text-xs leading-relaxed text-[#8a6a00]">
-        <b className="font-bold">이 데이터는 과거 신고 이력입니다.</b> 실시간 생산 여부나 재고를 보장하지
-        않습니다. 신고 이력이 있어도 현재는 생산하지 않을 수 있으니,{" "}
-        <b className="font-bold">현재 생산 여부·최소 발주 수량(MOQ)은 반드시 직접 확인</b>하세요.
-        (참고용으로 <b className="font-bold">생산종료여부</b> 필드를 함께 표시합니다.)
+      <div className="overflow-hidden rounded-[4px] border-[1.5px] border-ink">
+        <div className="cb-mono border-b-[1.5px] border-ink bg-mutedbg px-4 py-2 !text-ink-3">
+          이 데이터는 과거 신고 이력입니다
+        </div>
+        <div className="bg-row1 px-4 py-3 text-xs leading-relaxed text-ink-3">
+          실시간 생산 여부나 재고를 보장하지 않습니다. 신고 이력이 있어도 현재는 생산하지 않을 수
+          있으니, <b className="font-extrabold text-ink">현재 생산 여부·최소 발주 수량(MOQ)은 반드시 직접 확인</b>
+          하세요. (참고용으로 <b className="font-bold text-ink">생산종료여부</b> 필드를 함께 표시합니다.)
+        </div>
       </div>
 
       {/* 검색 */}
-      <form onSubmit={onSubmit} className="rounded-2xl border border-line bg-white p-4">
+      <form onSubmit={onSubmit} className="rounded-[5px] border-[1.5px] border-line bg-surface p-4">
         <p className="mb-3 text-xs leading-relaxed text-muted">
           {mode === "company" ? (
             <>
@@ -291,7 +306,7 @@ export default function OdmPage() {
               value={companyFilter}
               onChange={(e) => setCompanyFilter(e.target.value)}
               placeholder="업체명 (선택 — 비우면 거래처 전체)"
-              className="h-10 w-full rounded-[10px] border border-line px-3.5 text-sm outline-none focus:border-accent-bright sm:w-56 sm:flex-none"
+              className="h-10 w-full rounded-[4px] border-[1.5px] border-line px-3.5 text-sm outline-none focus:border-accent-bright sm:w-56 sm:flex-none"
             />
           )}
           <input
@@ -304,13 +319,12 @@ export default function OdmPage() {
                   ? "제품명 키워드 (예: 황치즈)"
                   : "식품유형 (예: 빵류)"
             }
-            className="h-10 flex-1 min-w-[240px] rounded-[10px] border border-line px-3.5 text-sm outline-none focus:border-accent-bright"
+            className="h-10 flex-1 min-w-[240px] rounded-[4px] border-[1.5px] border-line px-3.5 text-sm outline-none focus:border-accent-bright"
           />
           <button
             type="submit"
             disabled={loading}
-            style={{ background: "linear-gradient(145deg,#5a9b12,#4e8b10)" }}
-            className="h-10 rounded-[10px] px-5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
+            className="h-10 rounded-[4px] px-5 text-sm font-bold text-on-dark bg-ink shadow-[0_4px_14px_rgba(78,139,16,0.32)] transition-[filter] hover:brightness-105 disabled:opacity-60"
           >
             {loading ? "조회 중…" : "조회"}
           </button>
@@ -328,7 +342,7 @@ export default function OdmPage() {
                     setQuery(t);
                     void run("foodType", t);
                   }}
-                  className="rounded-full border border-line px-2.5 py-1 text-[11.5px] font-semibold text-muted-strong transition-colors hover:border-accent-bright hover:text-accent"
+                  className="rounded-[3px] border-[1.5px] border-line px-2.5 py-1 text-[11.5px] font-semibold text-muted-strong transition-colors hover:border-accent-bright hover:text-accent"
                 >
                   {t}
                 </button>
@@ -340,12 +354,12 @@ export default function OdmPage() {
 
       {needsKey && <KeyGuide />}
       {error && !needsKey && (
-        <div className="rounded-xl bg-down-soft px-4 py-3 text-sm text-down">{error}</div>
+        <div className="rounded-[5px] bg-down-soft px-4 py-3 text-sm text-down">{error}</div>
       )}
 
       {/* 결과 */}
       {data && searched && (
-        <section className="rounded-2xl border border-line bg-white p-5">
+        <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-muted-strong">
               <b className="font-bold text-accent-ink">{searched.q}</b>{" "}
@@ -362,7 +376,7 @@ export default function OdmPage() {
           </div>
 
           {data.cached && (
-            <div className="mb-3 rounded-xl border border-[#e8dcae] bg-[#fdfaf0] px-3.5 py-2.5 text-xs leading-relaxed text-[#8a6a00]">
+            <div className="mb-3 rounded-[5px] border border-[#C9C4B2] bg-[#FCFAF3] px-3.5 py-2.5 text-xs leading-relaxed text-[#5C5849]">
               <b className="font-bold">미리 받아둔 자료</b>
               {data.cachedAt && ` · ${formatFetchedAt(data.cachedAt)} 기준`}
               {data.cachedQuery && ` · 검색어 "${data.cachedQuery}"`}
@@ -424,7 +438,7 @@ export default function OdmPage() {
       )}
 
       {view === "saved" && (
-        <section className="rounded-2xl border border-line bg-white p-5">
+        <section className="rounded-[5px] border-[1.5px] border-line bg-surface p-5">
           <div className="mb-1 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-muted-strong">
               컨택 후보 <span className="font-normal text-muted">(브라우저에 저장)</span>
@@ -455,7 +469,7 @@ export default function OdmPage() {
                   {candidates.map((c) => {
                     const key = candidateKey(c.company, c.product);
                     return (
-                      <tr key={key} className="border-b border-[#f0eee9] last:border-0">
+                      <tr key={key} className="border-b border-[#E9E3D2] last:border-0">
                         <td className="py-3 pr-2 font-semibold text-accent-ink">
                           {c.product ? (
                             <ProductLink company={c.company} product={c.product} />
@@ -467,7 +481,7 @@ export default function OdmPage() {
                           <span className="inline-flex items-center gap-1.5">
                             {c.company}
                             {isKnownPartner(c.company) && (
-                              <span className="rounded-full bg-accent px-2 py-[2px] text-[10px] font-bold text-white">
+                              <span className="rounded-[3px] bg-rise px-2 py-[2px] text-[10px] font-bold text-ink">
                                 거래처
                               </span>
                             )}
@@ -480,10 +494,10 @@ export default function OdmPage() {
                               <button
                                 key={s}
                                 onClick={() => setStatus(key, s)}
-                                className={`rounded-full px-2 py-[3px] text-[11px] font-bold transition-colors ${
+                                className={`rounded-[3px] px-2 py-[3px] text-[11px] font-bold transition-colors ${
                                   c.status === s
                                     ? TONE[CONTACT_META[s].tone]
-                                    : "bg-white text-muted hover:text-muted-strong"
+                                    : "bg-surface text-muted hover:text-muted-strong"
                                 }`}
                               >
                                 {CONTACT_META[s].label}
@@ -523,7 +537,7 @@ function ProductRow({
 }) {
   const p = productionState(it.production);
   return (
-    <tr className="border-b border-[#f0eee9] last:border-0">
+    <tr className="border-b border-[#E9E3D2] last:border-0">
       <td className="py-3 pr-2 font-medium text-accent-ink">
         {it.product ? <ProductLink company={it.company} product={it.product} /> : "—"}
       </td>
@@ -532,7 +546,7 @@ function ProductRow({
         <span className="inline-flex items-center gap-1.5">
           {it.company || "—"}
           {isKnownPartner(it.company) && (
-            <span className="rounded-full bg-accent px-1.5 py-[1px] text-[10px] font-bold text-white">
+            <span className="rounded-[3px] bg-rise px-1.5 py-[1px] text-[10px] font-bold text-ink">
               거래처
             </span>
           )}
@@ -542,7 +556,7 @@ function ProductRow({
         {formatReportDate(it.reportDate)}
       </td>
       <td className="py-3 text-center">
-        <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${TONE[p.tone]}`}>
+        <span className={`rounded-[3px] px-2 py-1 text-[11px] font-bold ${TONE[p.tone]}`}>
           {p.label}
         </span>
       </td>
@@ -568,10 +582,10 @@ function SaveButton({
     <button
       onClick={onClick}
       disabled={saved}
-      className={`whitespace-nowrap rounded-[9px] border px-3 ${compact ? "py-1 text-[11.5px]" : "py-1.5 text-xs"} font-bold transition-colors ${
+      className={`whitespace-nowrap rounded-[4px] border px-3 ${compact ? "py-1 text-[11.5px]" : "py-1.5 text-xs"} font-bold transition-colors ${
         saved
-          ? "border-line bg-[#f0eee9] text-muted"
-          : "border-accent-bright text-accent hover:bg-accent-soft"
+          ? "border-line bg-[#E9E3D2] text-muted"
+          : "border-accent-bright text-accent hover:bg-mutedbg"
       }`}
     >
       {saved ? "저장됨" : label}
@@ -581,13 +595,13 @@ function SaveButton({
 
 function KeyGuide() {
   return (
-    <div className="rounded-2xl border border-[#e8dcae] bg-[#fdfaf0] p-5">
-      <h3 className="mb-1 text-sm font-bold text-[#8a6a00]">식품안전나라 인증키가 필요합니다</h3>
-      <p className="mb-3 text-xs text-[#8a6a00]">
+    <div className="rounded-[5px] border border-[#C9C4B2] bg-[#FCFAF3] p-5">
+      <h3 className="mb-1 text-sm font-bold text-[#5C5849]">식품안전나라 인증키가 필요합니다</h3>
+      <p className="mb-3 text-xs text-[#5C5849]">
         별도의 &ldquo;키 발급 페이지&rdquo;는 없습니다.{" "}
         <b className="font-bold">쓰려는 API를 목록에서 선택해 신청</b>하면 자동 승인되어 바로 발급됩니다. (무료)
       </p>
-      <ol className="ml-4 list-decimal space-y-2 text-xs leading-relaxed text-[#8a6a00]">
+      <ol className="ml-4 list-decimal space-y-2 text-xs leading-relaxed text-[#5C5849]">
         <li>
           <a
             href="https://foodsafetykorea.go.kr/login.do"
@@ -619,14 +633,14 @@ function KeyGuide() {
           상단 <b className="font-bold">[인증키 신청 현황]</b> 메뉴에서 발급된 키를 복사합니다.
         </li>
         <li>
-          <code className="rounded bg-[#f0eee9] px-1">.env.local</code> 에 넣고 서버를 재시작합니다:
+          <code className="rounded bg-[#E9E3D2] px-1">.env.local</code> 에 넣고 서버를 재시작합니다:
           <br />
-          <code className="mt-1 inline-block rounded bg-[#f0eee9] px-2 py-1">
+          <code className="mt-1 inline-block rounded bg-[#E9E3D2] px-2 py-1">
             FOODSAFETY_API_KEY=발급받은키
           </code>
         </li>
       </ol>
-      <p className="mt-3 border-t border-[#e8dcae] pt-2.5 text-[11px] leading-relaxed text-[#8a6a00]">
+      <p className="mt-3 border-t border-[#C9C4B2] pt-2.5 text-[11px] leading-relaxed text-[#5C5849]">
         <b className="font-bold">막히면</b> — 회원가입 본인인증이 안 되면 통합망 고객지원센터{" "}
         <b className="font-bold">1899-5590</b>, 데이터 문의는 식약처 종합상담센터{" "}
         <b className="font-bold">1577-1255</b>.{" "}
