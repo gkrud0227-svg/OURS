@@ -21,7 +21,7 @@ const BADGE_CLS: Record<DemoBadge, string> = {
 export function Badge({ kind }: { kind: DemoBadge }) {
   return (
     <span
-      className={`ml-1.5 rounded-[3px] px-2 py-[2px] text-[10.5px] font-extrabold ${BADGE_CLS[kind]}`}
+      className={`ml-1.5 inline-block whitespace-nowrap rounded-[3px] px-2 py-[2px] text-[10.5px] font-extrabold ${BADGE_CLS[kind]}`}
     >
       {kind === "구매↑" ? "구매 ↑" : kind}
     </span>
