@@ -1,5 +1,5 @@
 import { TierBand, rowClass } from "@/components/DemoTable";
-import { DEMO_DISCOVERED_AT, DEMO_OVERSEAS } from "@/lib/demo-data";
+import { DEMO_OVERSEAS, DEMO_OVERSEAS_AT } from "@/lib/demo-data";
 import { formatCount } from "@/lib/format";
 
 export const metadata = { title: "크림보드 체험 · 해외 트렌드" };
@@ -21,7 +21,7 @@ export default function DemoGlobalPage() {
   return (
     <div>
       <div className="mb-4">
-        <p className="cb-mono mb-[7px]">발굴 결과 · {DEMO_DISCOVERED_AT}</p>
+        <p className="cb-mono mb-[7px]">발굴 결과 · {DEMO_OVERSEAS_AT}</p>
         <h1 className="text-[28px] font-black leading-[1.08] tracking-[-0.04em] text-ink sm:text-[40px] sm:leading-[1.05] sm:tracking-[-0.045em]">
           해외 트렌드
         </h1>

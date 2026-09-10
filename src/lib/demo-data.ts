@@ -7,9 +7,9 @@
  *   2) 발굴 결과·시드·저장 목록은 **Supabase 공용 상태**다. 방문자가 팀 데이터를 덮어쓰면 안 된다.
  *   그래서 체험 화면은 store 를 아예 붙이지 않고 이 파일만 읽는다 — 읽기도 쓰기도 없다.
  *
- * ⚠️ 지어낸 수치가 아니다. 둘 다 **실제 발굴 결과에서 그대로 가져온 스냅샷**이다.
- *    - 국내: 배너에 실린 그 5건(황치즈 스낵). QR 로 들어온 사람이 배너에서 본 키워드를
- *      그대로 화면에서 다시 보게 하려고 같은 세트를 쓴다.
+ * ⚠️ 지어낸 수치가 아니다. 둘 다 **실제 발굴 결과에서 그대로 가져온 스냅샷**이고,
+ *    고른 것은 진짜 · 순서와 개수는 조정 · 숫자는 그대로가 원칙이다.
+ *    - 국내: 2026-09-10 발굴분에서 제품 후보만 골라냈다(아래 DEMO_DOMESTIC 주석에 제외 사유).
  *    - 해외: 2026-08-11 발굴분에서 **식품 맥락 후보만 골라냈다**. 같은 회차에 잡힌
  *      `janmashtami`·`comedy`·`fun` 같은 인도 명절어·일반어는 뺐다 — 발굴기의 알려진
  *      노이즈라 체험 화면에서 제품 후보처럼 보이면 안 된다.
@@ -19,7 +19,14 @@
 export type DemoTier = 1 | 2;
 
 /** 배지 — 실제 화면의 배지 규칙을 그대로 쓴다(그린은 상승·통과·완료에만). */
-export type DemoBadge = "트렌드" | "구매↑" | "상승세" | "유튜브+검색" | "유튜브" | "검색";
+export type DemoBadge =
+  | "트렌드"
+  | "구매↑"
+  | "신규 검색어"
+  | "상승세"
+  | "유튜브+검색"
+  | "유튜브"
+  | "검색";
 
 export interface DemoDomesticRow {
   rank: number;
@@ -38,67 +45,106 @@ export interface DemoDomesticRow {
   badges: DemoBadge[];
 }
 
-/** 국내 트렌드 — 배너에 실린 그 회차(황치즈 정복 스낵). */
+/**
+ * 국내 트렌드 — 2026-09-10 10:48 발굴분에서 **골라낸 것**.
+ *
+ * ⚠️ 수치는 전부 그 회차가 계산한 값 그대로다(상승률·검색량·발굴점수·상태·패턴).
+ *    바꾸지 말 것 — 실제 대시보드를 열었을 때 다른 값이 나오면 도구의 신뢰가 깨진다.
+ * ⚠️ 24건 중 7건만 남겼다. 뺀 것과 이유:
+ *    - `민음사 책갈피`(+1474%) — 굿즈다. 식품이 아니라 제품 후보가 아니다.
+ *    - `고구마`·`토마토`·`무화과`·`요거트`·`복숭아` — 일반 재료어. 제품명이 아니다.
+ *    - `멋쟁이`·`멋쟁이토마토`·`멋쟁이 토마토 가사` — 동요 가사에서 딸려 온 말.
+ *    - `네이버`·`네이버지도`·`웨이팅` — 비식품 플랫폼어·일반어.
+ *    - `한정선`(단독) — 무엇을 가리키는지 데이터로 확인이 안 됐다. 뜻을 설명 못 하는 말을
+ *      제품 후보로 올리지 않는다. 조합어 `한정선 요거트 찹쌀떡`은 제품이라 남겼다.
+ *    - `그릭요거트`·`요거트월드`·`토마토 마리네이드` — 하락이라 티어가 안 선다.
+ * ⚠️ 정렬은 **발굴점수순**이다(실제 화면의 정렬 옵션 중 하나). 상승률순으로 두면 검색량이
+ *    확인 안 된 신조어가 위로 올라와 첫 줄이 빈 칸(—)으로 시작한다.
+ */
 export const DEMO_DOMESTIC: DemoDomesticRow[] = [
   {
     rank: 1,
     tier: 1,
-    name: "미쯔 황치즈",
-    riseRate: 142,
-    volume: 33000,
+    name: "민음사빵",
+    riseRate: 1057.0,
+    volume: 425100,
     status: "급상승",
-    pattern: "3주 연속 상승",
-    patternUp: true,
-    score: 96,
-    badges: ["트렌드", "구매↑", "유튜브+검색"],
+    pattern: "등락(불안정)",
+    patternUp: false,
+    score: 84,
+    badges: ["트렌드", "유튜브+검색"],
   },
   {
     rank: 2,
     tier: 1,
-    name: "청우 황치즈스틱",
-    riseRate: 97,
-    volume: 12400,
+    name: "민음사",
+    riseRate: 161.2,
+    volume: 97500,
     status: "급상승",
-    pattern: "3주 연속 상승",
-    patternUp: true,
-    score: 90,
-    badges: ["트렌드", "구매↑", "유튜브"],
+    pattern: "등락(불안정)",
+    patternUp: false,
+    score: 75,
+    badges: ["트렌드", "유튜브"],
   },
   {
     rank: 3,
     tier: 1,
-    name: "두바이쫀득쿠키",
-    riseRate: 85,
-    volume: 9300,
+    name: "롯데 군위사과",
+    riseRate: 2978.3,
+    volume: 0,
     status: "급상승",
-    pattern: "하락 후 반등",
-    patternUp: false,
-    score: 84,
-    badges: ["트렌드", "유튜브"],
+    pattern: "3주 연속 상승",
+    patternUp: true,
+    score: 66,
+    badges: ["신규 검색어", "구매↑", "검색"],
   },
   {
     rank: 4,
-    tier: 2,
-    name: "황치즈스틱",
-    riseRate: 58,
-    volume: 21000,
-    status: "상승",
+    tier: 1,
+    name: "군위사과",
+    riseRate: 867.6,
+    volume: 0,
+    status: "급상승",
     pattern: "3주 연속 상승",
     patternUp: true,
-    score: 79,
-    badges: ["상승세", "유튜브+검색"],
+    score: 66,
+    badges: ["신규 검색어", "구매↑", "유튜브"],
   },
   {
     rank: 5,
+    tier: 1,
+    name: "한정선 요거트 찹쌀떡",
+    riseRate: 359.0,
+    volume: 0,
+    status: "급상승",
+    pattern: "3주 연속 상승",
+    patternUp: true,
+    score: 66,
+    badges: ["신규 검색어", "구매↑", "검색"],
+  },
+  {
+    rank: 6,
+    tier: 1,
+    name: "요거트찹쌀떡",
+    riseRate: 74.9,
+    volume: 0,
+    status: "급상승",
+    pattern: "3주 연속 상승",
+    patternUp: true,
+    score: 66,
+    badges: ["신규 검색어", "구매↑", "유튜브"],
+  },
+  {
+    rank: 7,
     tier: 2,
-    name: "황치즈칩쿠키",
-    riseRate: 62,
-    volume: 6700,
+    name: "찹쌀떡",
+    riseRate: 10.6,
+    volume: 23430,
     status: "상승",
     pattern: "3주 연속 상승",
     patternUp: true,
-    score: 74,
-    badges: ["상승세", "검색"],
+    score: 38,
+    badges: ["상승세", "유튜브"],
   },
 ];
 
@@ -170,8 +216,13 @@ export const DEMO_OVERSEAS: DemoOverseasRow[] = [
   },
 ];
 
-/** 이 스냅샷을 뜬 발굴 시각 — 화면 상단에 그대로 표시한다(지금 시각인 척하지 않는다). */
-export const DEMO_DISCOVERED_AT = "2026.08.11 17:16";
+/**
+ * 스냅샷을 뜬 발굴 시각 — 화면 상단에 그대로 표시한다(지금 시각인 척하지 않는다).
+ * ⚠️ 국내·해외를 따로 둔다. 한 상수로 묶으면 한쪽만 새로 뽑았을 때 다른 쪽이 남의 날짜를
+ *    자기 것처럼 표시하게 된다.
+ */
+export const DEMO_DOMESTIC_AT = "2026.09.10 10:48";
+export const DEMO_OVERSEAS_AT = "2026.08.11 17:16";
 
 /**
  * 체험용 컨택 후보 — 제조처 스크리닝에 미리 담겨 있는 3건.

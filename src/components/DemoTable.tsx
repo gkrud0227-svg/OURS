@@ -10,6 +10,7 @@ import type { DemoBadge, DemoTier } from "@/lib/demo-data";
 /** 배지 스타일 — 그린은 상승·통과·완료에만. 출처는 무채색, 두 소스 교차는 잉크 면. */
 const BADGE_CLS: Record<DemoBadge, string> = {
   트렌드: "bg-rise text-ink",
+  "신규 검색어": "bg-mutedbg text-ink-3",
   "구매↑": "bg-rise text-ink",
   상승세: "border border-ink text-ink",
   "유튜브+검색": "bg-ink text-on-dark",

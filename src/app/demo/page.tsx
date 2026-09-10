@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Badge, StatusChip, TierBand, rowClass } from "@/components/DemoTable";
-import { DEMO_DISCOVERED_AT, DEMO_DOMESTIC } from "@/lib/demo-data";
+import { DEMO_DOMESTIC, DEMO_DOMESTIC_AT } from "@/lib/demo-data";
 
 export const metadata = { title: "크림보드 체험 · 국내 트렌드" };
 
@@ -27,7 +27,7 @@ export default function DemoDomesticPage() {
   return (
     <div>
       <div className="mb-4">
-        <p className="cb-mono mb-[7px]">발굴 결과 · {DEMO_DISCOVERED_AT}</p>
+        <p className="cb-mono mb-[7px]">발굴 결과 · {DEMO_DOMESTIC_AT}</p>
         <h1 className="text-[28px] font-black leading-[1.08] tracking-[-0.04em] text-ink sm:text-[40px] sm:leading-[1.05] sm:tracking-[-0.045em]">
           국내 트렌드
         </h1>
@@ -55,7 +55,7 @@ export default function DemoDomesticPage() {
         <span className="whitespace-nowrap text-[13px] text-ink">
           최고 발굴점수 <span className="cb-num text-[16px]">{maxScore}</span>
         </span>
-        <span className="ml-auto text-[12px] font-bold text-ink-3">황치즈 정복 스낵 · SNS 핫키워드</span>
+        <span className="ml-auto text-[12px] font-bold text-ink-3">민음사빵 · 군위사과 · 요거트찹쌀떡</span>
       </div>
 
       <div className="mb-4 overflow-hidden rounded-[5px] border-2 border-ink">
@@ -81,7 +81,7 @@ export default function DemoDomesticPage() {
 
       <p className="text-[12px] leading-relaxed text-ink-3">
         <b className="font-bold text-ink">발굴점수</b> = 검색량 40% + 상승률 60% + 추세 패턴 보너스.
-        정렬은 상승률 기준이고, 구매 의향(쇼핑)은 함께 표시만 하며 점수에는 넣지 않습니다.
+        정렬은 발굴점수 기준이고, 구매 의향(쇼핑)은 함께 표시만 하며 점수에는 넣지 않습니다.
       </p>
 
       <div className="mt-7 flex flex-wrap items-center gap-3 rounded-[5px] border-[1.5px] border-ink bg-surface px-4 py-3.5">
@@ -115,7 +115,7 @@ function Row({ r, maxScore }: { r: (typeof DEMO_DOMESTIC)[number]; maxScore: num
             big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"
           }`}
         >
-          +{r.riseRate}%
+          +{r.riseRate.toFixed(1)}%
         </span>
       </div>
       <div className="min-w-0">
@@ -134,7 +134,7 @@ function Row({ r, maxScore }: { r: (typeof DEMO_DOMESTIC)[number]; maxScore: num
         <span
           className={`cb-num text-ink lg:text-right ${big ? "text-[15px]" : "text-[13px]"}`}
         >
-          {r.volume.toLocaleString()}
+          {r.volume > 0 ? r.volume.toLocaleString() : "—"}
         </span>
         <div className="flex items-center gap-1.5 lg:flex-col lg:items-start lg:gap-1">
           <StatusChip status={r.status} />
