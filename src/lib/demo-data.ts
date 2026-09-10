@@ -219,60 +219,86 @@ export interface DemoOverseasRow {
   /** 참고용 조회수 합 (순위에는 안 쓴다) */
   views: number;
   novel: boolean;
+  /** 국내 유입 판정 — 기회 / 후보 / 성숙 */
+  inflow: "기회" | "후보" | "성숙";
+  /** 국내 검색에 쓴 한글 표기 */
+  spelling: string;
   /** 실제 영상 제목 하나 */
   example: string;
 }
 
 /**
- * 해외 트렌드 — 2026-08-11 발굴분(US·GB).
- * 한 트렌드(크루아상 × 매그넘)가 여러 형태로 함께 잡힌 회차라 체험용으로 이야기가 선다.
+ * 해외 트렌드 — 2026-09-10 회차(US·GB).
+ *
+ * ⚠️ 이 회차가 체험용으로 좋은 이유: **재료는 국내에 있는데 조합은 아직 안 왔다**는 게
+ *    판정으로 그대로 드러난다. `크로와상`·`매그넘` 은 각각 국내에 이미 자리 잡아 성숙이고,
+ *    그 조합인 `크루아상 매그넘` 은 국내 검색이 아직 없어 후보다. 이게 해외 화면이
+ *    존재하는 이유 자체라 한 화면으로 설명이 된다.
+ * ⚠️ 같은 회차의 뉴스 소스 후보(`referring`→"발작이", `relieved`→"라이기트의")와
+ *    표기를 못 찾은 `판정 불가` 후보는 뺐다 — 표기 변환기의 알려진 오탐이라 제품
+ *    후보처럼 보이면 안 된다.
  */
 export const DEMO_OVERSEAS: DemoOverseasRow[] = [
   {
     rank: 1,
     tier: 1,
     term: "croissant",
-    lift: 4.6,
-    videos: 14,
-    channels: 13,
-    views: 11094526,
+    lift: 6.7,
+    videos: 16,
+    channels: 16,
+    views: 8906000,
     novel: true,
+    inflow: "성숙",
+    spelling: "크로와상",
     example: "The viral Magnum croissant trend🤌 10/10 #dubaireels #viralmagnumtrend #desserts",
   },
   {
     rank: 2,
     tier: 2,
     term: "magnum",
-    lift: 2.7,
-    videos: 12,
-    channels: 11,
-    views: 15124572,
+    lift: 3.3,
+    videos: 8,
+    channels: 8,
+    views: 6111000,
     novel: true,
-    example: "Viral Croissant & Magnum ice cream 🥐🍨 #viral #trending #youtubeshorts #shorts",
+    inflow: "성숙",
+    spelling: "매그넘",
+    example: "The viral Magnum croissant trend🤌 10/10 #dubaireels #viralmagnumtrend #desserts",
   },
   {
     rank: 3,
     tier: 2,
-    term: "donuts",
-    lift: 2.5,
-    videos: 25,
-    channels: 15,
-    views: 6712159,
-    novel: false,
-    example: "How to make donuts diffrently - foodiebeats tiktok trend - fun for kids 🍩",
+    term: "croissant magnum",
+    lift: 2.2,
+    videos: 6,
+    channels: 6,
+    views: 14009000,
+    novel: true,
+    inflow: "후보",
+    spelling: "크루아상 매그넘",
+    example: "Viral Croissant & Magnum ice cream 🥐🍨 #viral #trending #youtubeshorts #shorts",
   },
   {
     rank: 4,
     tier: 2,
     term: "magnum croissant",
     lift: 2.1,
-    videos: 7,
-    channels: 6,
-    views: 6136221,
+    videos: 5,
+    channels: 5,
+    views: 6085000,
     novel: true,
+    inflow: "후보",
+    spelling: "매그넘 크루아상",
     example: "The viral Magnum croissant trend🤌 10/10 #dubaireels #viralmagnumtrend #desserts",
   },
 ];
+
+/** 국내 유입 판정 뜻 — 실제 화면(GROUP_META)과 같은 말을 쓴다. */
+export const DEMO_INFLOW_DESC: Record<DemoOverseasRow["inflow"], string> = {
+  기회: "국내도 오르기 시작했는데 아직 규모가 작다 — 지금 움직일 대상",
+  후보: "해외는 뜨는데 국내 검색은 아직 없다 — 지켜볼 대상",
+  성숙: "국내에 이미 자리 잡았다 — 라인 확장·프리미엄화는 가능",
+};
 
 /**
  * 스냅샷을 뜬 발굴 시각 — 화면 상단에 그대로 표시한다(지금 시각인 척하지 않는다).
@@ -280,7 +306,7 @@ export const DEMO_OVERSEAS: DemoOverseasRow[] = [
  *    자기 것처럼 표시하게 된다.
  */
 export const DEMO_DOMESTIC_AT = "2026.09.10 10:48";
-export const DEMO_OVERSEAS_AT = "2026.08.11 17:16";
+export const DEMO_OVERSEAS_AT = "2026.09.10 14:34";
 
 /**
  * 체험용 컨택 후보 — 제조처 스크리닝에 미리 담겨 있는 3건.

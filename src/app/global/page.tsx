@@ -287,11 +287,12 @@ export default function GlobalPage() {
           </span>
         </div>
         <p className="max-w-3xl text-sm leading-relaxed text-muted-strong">
-          해외엔 절대 검색량 소스가 없습니다. 그래서{" "}
-          <b className="font-medium">검색량 급상승</b> 대신{" "}
-          <b className="font-medium">콘텐츠 급상승</b>을 봅니다 — 최근 조회수가 터진 영상에서만
-          갑자기 튀어나온 용어를 <b className="font-medium">과거 기준선과 비교(lift)</b>해 신조어를
-          잡아냅니다.
+          해외엔 한국 검색량 소스가 없어, 먼저{" "}
+          <b className="font-medium">콘텐츠 급상승(lift)</b>으로 후보를 잡습니다 — 과거 기준선 대비
+          최근 이 말을 쓴 채널이 몇 배 늘었는지입니다. 그다음 그 낱말의{" "}
+          <b className="font-medium">한글 표기를 찾아 국내 검색을 조회</b>해{" "}
+          <b className="font-medium">기회 · 후보 · 성숙</b>으로 가릅니다. 해외 상승만으로는 기획
+          근거가 안 되고, 국내에 왔는지까지 봐야 지금 움직일 대상인지 알 수 있습니다.
         </p>
       </header>
 

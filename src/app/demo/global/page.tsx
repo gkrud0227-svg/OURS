@@ -1,5 +1,6 @@
 import { TierBand, rowClass } from "@/components/DemoTable";
-import { DEMO_OVERSEAS, DEMO_OVERSEAS_AT } from "@/lib/demo-data";
+import { OverseasPipeline } from "../OverseasPipeline";
+import { DEMO_INFLOW_DESC, DEMO_OVERSEAS, DEMO_OVERSEAS_AT } from "@/lib/demo-data";
 import { formatCount } from "@/lib/format";
 
 export const metadata = { title: "크림보드 체험 · 해외 트렌드" };
@@ -16,7 +17,7 @@ export const metadata = { title: "크림보드 체험 · 해외 트렌드" };
  */
 const GRID =
   "grid grid-cols-[38px_1fr] gap-x-3 px-4 " +
-  "lg:grid-cols-[44px_1fr_120px_132px_116px] lg:items-center lg:gap-3";
+  "lg:grid-cols-[44px_1fr_104px_170px_120px_104px] lg:items-center lg:gap-3";
 
 export default function DemoGlobalPage() {
   const t1 = DEMO_OVERSEAS.filter((r) => r.tier === 1);
@@ -29,16 +30,10 @@ export default function DemoGlobalPage() {
         <h1 className="text-[28px] font-black leading-[1.08] tracking-[-0.04em] text-ink sm:text-[40px] sm:leading-[1.05] sm:tracking-[-0.045em]">
           해외 트렌드
         </h1>
-        <p className="mt-3 max-w-[760px] text-[12px] leading-relaxed text-ink-3">
-          해외엔 한국 검색량 소스(데이터랩·검색광고)가 없어{" "}
-          <b className="font-bold text-ink">검색 검증을 못 합니다</b>. 대신 유튜브{" "}
-          <b className="font-bold text-ink">콘텐츠 급상승(lift)</b>만 봅니다 — 과거 기준선 대비
-          최근 이 말을 쓴 채널이 몇 배 늘었는지입니다.
-        </p>
+        <OverseasPipeline />
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-x-[18px] gap-y-2 rounded-[5px] border-[1.5px] border-ink bg-surface px-4 py-[11px]">
-        <span className="cb-mono">이 회차</span>
         <span className="whitespace-nowrap text-[13px] text-ink">
           후보 <span className="cb-num text-[16px]">{DEMO_OVERSEAS.length}</span>
           <span className="text-[12px] text-ink-4">건</span>
@@ -57,6 +52,7 @@ export default function DemoGlobalPage() {
           <span className="cb-th">#</span>
           <span className="cb-th">키워드</span>
           <span className="cb-th">급증 배수</span>
+          <span className="cb-th">국내 유입</span>
           <span className="cb-th text-right">영상수 (채널)</span>
           <span className="cb-th text-right">조회수 (참고)</span>
         </div>
@@ -117,6 +113,25 @@ function Row({ r }: { r: (typeof DEMO_OVERSEAS)[number] }) {
         }`}
       >
         ×{r.lift}
+      </span>
+
+      {/* 국내 유입 — 해외 화면의 결론. 한글 표기를 함께 보여야 무엇으로 조회했는지 보인다. */}
+      <span
+        className="col-start-2 mt-1.5 flex flex-wrap items-center gap-1.5 lg:col-start-auto lg:mt-0"
+        title={DEMO_INFLOW_DESC[r.inflow]}
+      >
+        <span
+          className={`cursor-help whitespace-nowrap rounded-[3px] px-2 py-[2px] text-[10.5px] font-extrabold ${
+            r.inflow === "기회"
+              ? "bg-ink text-on-dark"
+              : r.inflow === "후보"
+                ? "border-[1.5px] border-ink text-ink"
+                : "bg-mutedbg text-ink-3"
+          }`}
+        >
+          {r.inflow}
+        </span>
+        <span className="text-[11.5px] text-ink-3">{r.spelling}</span>
       </span>
 
       <div className="col-start-2 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 lg:col-start-auto lg:mt-0 lg:contents">

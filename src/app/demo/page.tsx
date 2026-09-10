@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { TierBand } from "@/components/DemoTable";
 import { DomesticRows } from "./DomesticRows";
+import { Pipeline } from "./Pipeline";
 import { DEMO_DOMESTIC, DEMO_DOMESTIC_AT } from "@/lib/demo-data";
 
 export const metadata = { title: "크림보드 체험 · 국내 트렌드" };
@@ -32,13 +33,7 @@ export default function DemoDomesticPage() {
         <h1 className="text-[28px] font-black leading-[1.08] tracking-[-0.04em] text-ink sm:text-[40px] sm:leading-[1.05] sm:tracking-[-0.045em]">
           국내 트렌드
         </h1>
-        <p className="mt-3 max-w-[760px] text-[12px] leading-relaxed text-ink-3">
-          유튜브 콘텐츠에서 신조어를 발굴하고, 그 발굴어를{" "}
-          <b className="font-bold text-ink">네이버 검색 자동완성으로 확장</b>한 뒤{" "}
-          <b className="font-bold text-ink">데이터랩 검색 급상승으로 검증</b>합니다. 검색까지 오른
-          키워드에 <b className="font-bold text-ink">쇼핑 클릭(구매 의향)</b>이 겹치면 가장 강한
-          신호입니다.
-        </p>
+        <Pipeline />
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-x-[18px] gap-y-2 rounded-[5px] border-[1.5px] border-ink bg-surface px-4 py-[11px]">

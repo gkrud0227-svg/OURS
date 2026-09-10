@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { OdmPipeline } from "@/components/OdmPipeline";
 import { DEMO_ODM_CANDIDATES } from "@/lib/demo-data";
 import {
   fetchOdm,
@@ -226,11 +227,7 @@ export default function OdmPage() {
             식품안전나라
           </span>
         </div>
-        <p className="max-w-3xl text-sm leading-relaxed text-muted-strong">
-          국내 식품 제조사가 의무 제출하는 <b className="font-medium">품목제조보고</b> 이력을 조회합니다.
-          전화하기 전에 <b className="font-medium">&ldquo;이 회사가 이 카테고리를 만들어본 적이 있는지&rdquo;</b>를
-          먼저 걸러, 헛걸음을 줄입니다.
-        </p>
+        <OdmPipeline />
       </header>
 
       {/*
