@@ -54,16 +54,18 @@ const VOLUME_CONFIRM_FLOOR = 100;
 const MIN_OVERSEAS_CHANNELS = 8;
 
 /**
- * 트렌드 판정 배지 — "발굴됐다" / "실제로 뜬다" / "규모 미확인"을 구분한다.
- * 상승률(%)이 올라도 **월 검색량이 뒷받침(규모 확인)돼야** 트렌드로 표시한다.
- * 규모 미확인(검색량 0)이면 상승률이 커도 노이즈일 수 있어 낮춰 표시한다.
+ * 규모 확인 배지 — 이 상승이 **월 검색량으로 뒷받침되는가**만 말한다.
+ *
+ * ⚠️ 예전엔 `트렌드`·`상승세`·`신규 검색어` 세 가지였는데, 앞의 둘은 급상승/상승을
+ *    한 번 더 말하는 것이라 티어 밴드와 겹쳤고 "트렌드가 무슨 뜻이냐"는 질문을 낳았다.
+ *    급상승·상승은 티어가 말하므로, 이 배지는 **규모 확인 여부** 하나만 남긴다.
+ *    검색량 0은 "아무도 안 찾는다"가 아니라 **검색광고에 아직 집계가 안 된 것**이다.
  */
 function trendMark(status: TrendStatus, confirmed: boolean): { label: string; cls: string } | null {
   if (status !== "surge" && status !== "up") return null; // 유지·하락·데이터없음 = 관망
-  if (!confirmed) return { label: "신규 검색어", cls: "bg-mutedbg text-ink-3" }; // 검색광고에 아직 집계 안 됨(새로 뜨는 검색어, 노이즈 주의)
-  // 그린은 "검색량으로 규모까지 확인된 상승"에만 쓴다.
-  if (status === "surge") return { label: "트렌드", cls: "bg-rise text-ink" };
-  return { label: "상승세", cls: "border border-ink text-ink" };
+  return confirmed
+    ? { label: "검색량 확인", cls: "bg-rise text-ink" }
+    : { label: "검색량 미확인", cls: "bg-mutedbg text-ink-3" };
 }
 
 /** 점수 막대 — 상승은 그린, 그 외는 무채색. 그린은 방향을 말하는 색이다. */
@@ -250,7 +252,7 @@ function RankRow({
             }. 국내 트렌드 탭의 '삼중 확인'과 같은 신호.`}
             className="ml-1.5 cursor-help rounded-[3px] bg-rise px-2 py-[2px] text-[10.5px] font-extrabold text-ink"
           >
-            구매 ↑
+            구매 상승
           </span>
         )}
         {c.source && (

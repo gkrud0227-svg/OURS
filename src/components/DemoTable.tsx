@@ -9,10 +9,9 @@ import type { DemoBadge, DemoTier } from "@/lib/demo-data";
 
 /** 배지 스타일 — 그린은 상승·통과·완료에만. 출처는 무채색, 두 소스 교차는 잉크 면. */
 const BADGE_CLS: Record<DemoBadge, string> = {
-  트렌드: "bg-rise text-ink",
-  "신규 검색어": "bg-mutedbg text-ink-3",
-  "구매↑": "bg-rise text-ink",
-  상승세: "border border-ink text-ink",
+  "검색량 확인": "bg-rise text-ink",
+  "검색량 미확인": "bg-mutedbg text-ink-3",
+  "구매 상승": "bg-rise text-ink",
   "유튜브+검색": "bg-ink text-on-dark",
   유튜브: "bg-mutedbg text-ink-3",
   검색: "border border-chip text-ink-2",
@@ -23,7 +22,7 @@ export function Badge({ kind }: { kind: DemoBadge }) {
     <span
       className={`ml-1.5 inline-block whitespace-nowrap rounded-[3px] px-2 py-[2px] text-[10.5px] font-extrabold ${BADGE_CLS[kind]}`}
     >
-      {kind === "구매↑" ? "구매 ↑" : kind}
+      {kind}
     </span>
   );
 }

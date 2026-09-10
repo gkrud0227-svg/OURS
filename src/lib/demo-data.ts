@@ -18,12 +18,19 @@
 
 export type DemoTier = 1 | 2;
 
-/** 배지 — 실제 화면의 배지 규칙을 그대로 쓴다(그린은 상승·통과·완료에만). */
+/**
+ * 배지 — 실제 화면의 배지 규칙을 그대로 쓴다(그린은 상승·통과·완료에만).
+ *
+ * 배지가 말하는 건 두 가지뿐이다.
+ *   1) **규모**  — 이 상승이 월 검색량으로 뒷받침되는가(`검색량 확인` / `검색량 미확인`)
+ *   2) **출처**  — 어디서 발굴했는가(`유튜브+검색` / `유튜브` / `검색`)
+ *   그리고 쇼핑 클릭까지 오른 후보에만 `구매 상승` 이 붙는다.
+ * ⚠️ 급상승·상승은 **티어 밴드가 말한다**. 배지로 반복하지 않는다.
+ */
 export type DemoBadge =
-  | "트렌드"
-  | "구매↑"
-  | "신규 검색어"
-  | "상승세"
+  | "검색량 확인"
+  | "검색량 미확인"
+  | "구매 상승"
   | "유튜브+검색"
   | "유튜브"
   | "검색";
@@ -75,7 +82,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     pattern: "등락(불안정)",
     patternUp: false,
     score: 84,
-    badges: ["트렌드", "유튜브+검색"],
+    badges: ["검색량 확인", "유튜브+검색"],
   },
   {
     rank: 2,
@@ -87,7 +94,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     pattern: "3주 연속 상승",
     patternUp: true,
     score: 82,
-    badges: ["트렌드", "유튜브"],
+    badges: ["검색량 확인", "유튜브"],
   },
   {
     rank: 3,
@@ -99,7 +106,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     pattern: "등락(불안정)",
     patternUp: false,
     score: 75,
-    badges: ["트렌드", "유튜브"],
+    badges: ["검색량 확인", "유튜브"],
   },
   {
     rank: 4,
@@ -111,7 +118,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     pattern: "3주 연속 상승",
     patternUp: true,
     score: 66,
-    badges: ["신규 검색어", "구매↑", "검색"],
+    badges: ["검색량 미확인", "구매 상승", "검색"],
   },
   {
     rank: 5,
@@ -123,7 +130,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     pattern: "3주 연속 상승",
     patternUp: true,
     score: 66,
-    badges: ["신규 검색어", "구매↑", "유튜브"],
+    badges: ["검색량 미확인", "구매 상승", "유튜브"],
   },
   {
     rank: 6,
@@ -135,7 +142,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     pattern: "3주 연속 상승",
     patternUp: true,
     score: 66,
-    badges: ["신규 검색어", "구매↑", "검색"],
+    badges: ["검색량 미확인", "구매 상승", "검색"],
   },
   {
     rank: 7,
@@ -147,7 +154,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     pattern: "3주 연속 상승",
     patternUp: true,
     score: 66,
-    badges: ["신규 검색어", "구매↑", "유튜브"],
+    badges: ["검색량 미확인", "구매 상승", "유튜브"],
   },
   {
     rank: 8,
@@ -159,7 +166,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     pattern: "3주 연속 상승",
     patternUp: true,
     score: 60,
-    badges: ["상승세", "유튜브"],
+    badges: ["검색량 확인", "유튜브"],
   },
   {
     rank: 9,
@@ -171,7 +178,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     pattern: "등락(불안정)",
     patternUp: false,
     score: 52,
-    badges: ["상승세", "유튜브"],
+    badges: ["검색량 확인", "유튜브"],
   },
   {
     rank: 10,
@@ -183,7 +190,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     pattern: "등락(불안정)",
     patternUp: false,
     score: 52,
-    badges: ["상승세", "유튜브"],
+    badges: ["검색량 확인", "유튜브"],
   },
   {
     rank: 11,
@@ -195,7 +202,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     pattern: "3주 연속 상승",
     patternUp: true,
     score: 38,
-    badges: ["상승세", "유튜브"],
+    badges: ["검색량 확인", "유튜브"],
   },
 ];
 

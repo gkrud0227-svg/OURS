@@ -42,7 +42,6 @@ export default function DemoDomesticPage() {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-x-[18px] gap-y-2 rounded-[5px] border-[1.5px] border-ink bg-surface px-4 py-[11px]">
-        <span className="cb-mono">이 회차</span>
         <span className="whitespace-nowrap text-[13px] text-ink">
           검증 통과 <span className="cb-num text-[16px]">{DEMO_DOMESTIC.length}</span>
           <span className="text-[12px] text-ink-4">건</span>
@@ -74,6 +73,34 @@ export default function DemoDomesticPage() {
 
         <TierBand tier={2} label="TIER 2 · 우선 — 상승세" note={`${t2.length}건 · 다음 크림 후보`} />
         <DomesticRows rows={t2} maxScore={maxScore} />
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[4px] border-[1.5px] border-ink bg-surface px-4 py-3">
+        <span className="cb-mono">배지 뜻</span>
+        <span className="flex items-center gap-1.5 text-[12px] text-ink-3">
+          <span className="rounded-[3px] bg-rise px-2 py-[2px] text-[10.5px] font-extrabold text-ink">
+            검색량 확인
+          </span>
+          상승이 실제 검색량으로 뒷받침됨
+        </span>
+        <span className="flex items-center gap-1.5 text-[12px] text-ink-3">
+          <span className="rounded-[3px] bg-mutedbg px-2 py-[2px] text-[10.5px] font-extrabold text-ink-3">
+            검색량 미확인
+          </span>
+          너무 새 말이라 아직 검색량 집계 전
+        </span>
+        <span className="flex items-center gap-1.5 text-[12px] text-ink-3">
+          <span className="rounded-[3px] bg-rise px-2 py-[2px] text-[10.5px] font-extrabold text-ink">
+            구매 상승
+          </span>
+          쇼핑 클릭까지 함께 오름
+        </span>
+        <span className="flex items-center gap-1.5 text-[12px] text-ink-3">
+          <span className="rounded-[3px] bg-ink px-2 py-[2px] text-[10.5px] font-extrabold text-on-dark">
+            유튜브+검색
+          </span>
+          두 소스에서 함께 잡힘
+        </span>
       </div>
 
       <p className="text-[12px] leading-relaxed text-ink-3">
