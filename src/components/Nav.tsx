@@ -28,8 +28,21 @@ const LINKS = [
 // { href: "/instagram", label: "Instagram 수집" },
 // { href: "/scorecard", label: "스코어카드" },
 
+/**
+ * 체험용 탭 — 배너 QR(`/demo`)로 들어온 사람이 보는 구성.
+ *
+ * ⚠️ 홈이 없다. 홈은 발굴 실행 화면이라 체험에서 보여줄 게 아니고, 트렌드 두 화면은
+ *    고정 결과를 읽기만 한다. 제조처 스크리닝만 실제 조회가 돈다(같은 화면 그대로).
+ */
+const DEMO_LINKS = [
+  { href: "/demo", label: "국내 트렌드" },
+  { href: "/demo/global", label: "해외 트렌드" },
+  { href: "/demo/odm", label: "제조처 스크리닝" },
+];
+
 function isActive(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
+  // "/" 와 "/demo" 는 하위 경로를 가지므로 정확히 일치할 때만 활성이다.
+  if (href === "/" || href === "/demo") return pathname === href;
   return pathname === href || pathname.startsWith(href + "/");
 }
 
@@ -44,10 +57,13 @@ function isActive(pathname: string, href: string): boolean {
  */
 export function Nav() {
   const pathname = usePathname();
+  // 배너 QR 로 들어온 체험 화면은 탭 구성이 다르다.
+  const demo = pathname === "/demo" || pathname.startsWith("/demo/");
+  const links = demo ? DEMO_LINKS : LINKS;
 
   return (
     <header className="flex h-16 items-center gap-6 border-b-2 border-ink bg-surface px-[26px]">
-      <Link href="/" className="flex shrink-0 items-center gap-[11px]">
+      <Link href={demo ? "/demo" : "/"} className="flex shrink-0 items-center gap-[11px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/pulmuone-logo.png" alt="Pulmuone" className="block h-[30px] w-auto" />
         <span className="block h-[22px] w-[1.5px] bg-chip" />
@@ -57,10 +73,15 @@ export function Nav() {
         <span className="cb-mono whitespace-nowrap rounded-[3px] bg-rise px-[7px] py-1 !text-[10px] !tracking-[0.1em] !text-ink">
           CREAM RISES
         </span>
+        {demo && (
+          <span className="whitespace-nowrap rounded-[3px] border-[1.5px] border-ink px-2 py-[3px] text-[11px] font-extrabold text-ink">
+            체험용
+          </span>
+        )}
       </Link>
 
       <nav className="nt-scroll ml-1.5 flex min-w-0 items-center gap-0.5 overflow-x-auto">
-        {LINKS.map((link) => {
+        {links.map((link) => {
           const active = isActive(pathname, link.href);
           return (
             <Link

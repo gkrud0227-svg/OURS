@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   fetchOdm,
   fetchOdmPartners,
@@ -59,7 +60,17 @@ function ProductLink({ company, product }: { company: string; product: string })
 }
 
 export default function OdmPage() {
-  const [mode, setMode] = useState<Mode>("company");
+  /*
+   * 체험용(/demo/odm)은 같은 컴포넌트를 그대로 쓰되 **첫 화면만 다르다**.
+   *
+   * 1) 팀은 담아둔 컨택 후보를 다시 보러 오지만, QR 로 처음 들어온 사람의 컨택 후보는
+   *    항상 비어 있어서 빈 목록이 첫인상이 된다. 체험에서는 바로 조회부터 보여준다.
+   * 2) ⚠️ 기본 탭이 **제품명 검색**이다. 업체명 검색은 식약처 실시간 조회라
+   *    **매일 09~19시에 ERROR-503 으로 막힌다** — 배너 QR 을 찍는 시간대가 바로 그때다.
+   *    제품명·식품유형 검색은 크론이 받아둔 캐시를 읽어 그 시간대에도 결과가 나온다.
+   */
+  const isDemoRoute = usePathname().startsWith("/demo");
+  const [mode, setMode] = useState<Mode>(isDemoRoute ? "product" : "company");
   /*
    * 검색 화면 / 컨택 후보 화면 전환.
    * 기본은 **컨택 후보** — 이 화면에 다시 들어오는 이유는 대개 "아까 담아둔 업체를 다시
@@ -67,7 +78,7 @@ export default function OdmPage() {
    * ⚠️ 트렌드 탭에서 ?type=·?term= 을 달고 넘어온 경우는 예외다 — 아래 마운트 effect 에서
    *    검색 화면으로 되돌린다. 안 그러면 조회를 걸어놓고 다른 화면을 보여주게 된다.
    */
-  const [view, setView] = useState<"search" | "saved">("saved");
+  const [view, setView] = useState<"search" | "saved">(isDemoRoute ? "search" : "saved");
   const [query, setQuery] = useState("");
   /** 제품명 탭 전용 — 선택적 업체명. 비우면 거래처 전체, 넣으면 그 업체 안에서만. */
   const [companyFilter, setCompanyFilter] = useState("");
