@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge, StatusChip, TierBand, rowClass } from "@/components/DemoTable";
 import { DEMO_DOMESTIC, DEMO_DOMESTIC_AT } from "@/lib/demo-data";
+import { formatCount } from "@/lib/format";
 
 export const metadata = { title: "크림보드 체험 · 국내 트렌드" };
 
@@ -134,7 +135,7 @@ function Row({ r, maxScore }: { r: (typeof DEMO_DOMESTIC)[number]; maxScore: num
         <span
           className={`cb-num text-ink lg:text-right ${big ? "text-[15px]" : "text-[13px]"}`}
         >
-          {r.volume > 0 ? r.volume.toLocaleString() : "—"}
+          {r.volume > 0 ? formatCount(r.volume) : "—"}
         </span>
         <div className="flex items-center gap-1.5 lg:flex-col lg:items-start lg:gap-1">
           <StatusChip status={r.status} />

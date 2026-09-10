@@ -50,14 +50,17 @@ export interface DemoDomesticRow {
  *
  * ⚠️ 수치는 전부 그 회차가 계산한 값 그대로다(상승률·검색량·발굴점수·상태·패턴).
  *    바꾸지 말 것 — 실제 대시보드를 열었을 때 다른 값이 나오면 도구의 신뢰가 깨진다.
- * ⚠️ 24건 중 7건만 남겼다. 뺀 것과 이유:
+ * ⚠️ 24건 중 11건을 남겼다. 뺀 것과 이유:
  *    - `민음사 책갈피`(+1474%) — 굿즈다. 식품이 아니라 제품 후보가 아니다.
- *    - `고구마`·`토마토`·`무화과`·`요거트`·`복숭아` — 일반 재료어. 제품명이 아니다.
  *    - `멋쟁이`·`멋쟁이토마토`·`멋쟁이 토마토 가사` — 동요 가사에서 딸려 온 말.
  *    - `네이버`·`네이버지도`·`웨이팅` — 비식품 플랫폼어·일반어.
- *    - `한정선`(단독) — 무엇을 가리키는지 데이터로 확인이 안 됐다. 뜻을 설명 못 하는 말을
- *      제품 후보로 올리지 않는다. 조합어 `한정선 요거트 찹쌀떡`은 제품이라 남겼다.
- *    - `그릭요거트`·`요거트월드`·`토마토 마리네이드` — 하락이라 티어가 안 선다.
+ *    - `요거트`·`복숭아`·`그릭요거트`·`요거트월드`·`토마토 마리네이드` — 하락이거나
+ *      신호가 얇아 티어가 안 선다.
+ * ⚠️ `고구마`·`토마토`·`무화과`는 제품명이 아니라 재료어지만 **사용자 판단으로 포함**했다.
+ *    셋 다 검색 검증을 통과한 상승 후보라 TIER 2(카테고리 신호)로 들어간다.
+ * ⚠️ `한정선`(단독)은 **사용자 판단으로 포함**했다. 발굴점수 82·월 검색량 71만으로 신호는
+ *    가장 두껍지만, 이 말이 무엇을 가리키는지는 발굴 데이터로 확인되지 않았다(확산 흐름·
+ *    확산 이유가 모두 비어 있었다). 발표 자리에서 "이게 뭔가" 질문이 나올 수 있는 행이다.
  * ⚠️ 정렬은 **발굴점수순**이다(실제 화면의 정렬 옵션 중 하나). 상승률순으로 두면 검색량이
  *    확인 안 된 신조어가 위로 올라와 첫 줄이 빈 칸(—)으로 시작한다.
  */
@@ -77,6 +80,18 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
   {
     rank: 2,
     tier: 1,
+    name: "한정선",
+    riseRate: 36.7,
+    volume: 710200,
+    status: "급상승",
+    pattern: "3주 연속 상승",
+    patternUp: true,
+    score: 82,
+    badges: ["트렌드", "유튜브"],
+  },
+  {
+    rank: 3,
+    tier: 1,
     name: "민음사",
     riseRate: 161.2,
     volume: 97500,
@@ -87,7 +102,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     badges: ["트렌드", "유튜브"],
   },
   {
-    rank: 3,
+    rank: 4,
     tier: 1,
     name: "롯데 군위사과",
     riseRate: 2978.3,
@@ -99,7 +114,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     badges: ["신규 검색어", "구매↑", "검색"],
   },
   {
-    rank: 4,
+    rank: 5,
     tier: 1,
     name: "군위사과",
     riseRate: 867.6,
@@ -111,7 +126,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     badges: ["신규 검색어", "구매↑", "유튜브"],
   },
   {
-    rank: 5,
+    rank: 6,
     tier: 1,
     name: "한정선 요거트 찹쌀떡",
     riseRate: 359.0,
@@ -123,7 +138,7 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     badges: ["신규 검색어", "구매↑", "검색"],
   },
   {
-    rank: 6,
+    rank: 7,
     tier: 1,
     name: "요거트찹쌀떡",
     riseRate: 74.9,
@@ -135,7 +150,43 @@ export const DEMO_DOMESTIC: DemoDomesticRow[] = [
     badges: ["신규 검색어", "구매↑", "유튜브"],
   },
   {
-    rank: 7,
+    rank: 8,
+    tier: 2,
+    name: "고구마",
+    riseRate: 29.4,
+    volume: 57240,
+    status: "상승",
+    pattern: "3주 연속 상승",
+    patternUp: true,
+    score: 60,
+    badges: ["상승세", "유튜브"],
+  },
+  {
+    rank: 9,
+    tier: 2,
+    name: "토마토",
+    riseRate: 26.3,
+    volume: 68840,
+    status: "상승",
+    pattern: "등락(불안정)",
+    patternUp: false,
+    score: 52,
+    badges: ["상승세", "유튜브"],
+  },
+  {
+    rank: 10,
+    tier: 2,
+    name: "무화과",
+    riseRate: 16.1,
+    volume: 254200,
+    status: "상승",
+    pattern: "등락(불안정)",
+    patternUp: false,
+    score: 52,
+    badges: ["상승세", "유튜브"],
+  },
+  {
+    rank: 11,
     tier: 2,
     name: "찹쌀떡",
     riseRate: 10.6,
