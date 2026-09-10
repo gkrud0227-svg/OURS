@@ -170,6 +170,15 @@ input[type="range"].accent-range {
   overflow: hidden;
 }
 
+/*
+ * 체험 화면(/demo)용 유동 셸 — 배너 QR 로 들어오는 사람은 대부분 휴대폰이다.
+ * 최소 폭 1240px 을 그대로 두면 첫 화면이 가로로 밀려 아무것도 못 읽는다.
+ */
+.cb-shell--fluid {
+  min-width: 0;
+  max-width: 1280px;
+}
+
 /* 수치 전용 — 배수·건수·점수 */
 .cb-num {
   font-family: var(--font-num);

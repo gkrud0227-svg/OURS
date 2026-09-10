@@ -11,7 +11,13 @@ export const metadata = { title: "크림보드 체험 · 국내 트렌드" };
  * 나머지(티어 밴드·배지 규칙·수치 서체·괘선)는 전부 같은 규격이라, 체험한 사람이
  * 실제 화면을 봤을 때 다른 물건으로 느끼지 않는다.
  */
-const GRID = "grid grid-cols-[44px_120px_1fr_100px_120px_140px] items-center gap-3 px-4";
+/**
+ * 넓은 화면에서만 6열 격자를 쓴다.
+ * ⚠️ 휴대폰에서는 격자를 버리고 세로로 쌓는다 — 6열을 390px 에 욱여넣으면 배수도 키워드도
+ *    다 뭉개진다. 배너 QR 로 들어오는 사람은 대부분 휴대폰이라 이쪽이 기본 화면이다.
+ */
+const GRID =
+  "lg:grid lg:grid-cols-[44px_120px_1fr_100px_120px_140px] lg:items-center lg:gap-3 px-4";
 
 export default function DemoDomesticPage() {
   const t1 = DEMO_DOMESTIC.filter((r) => r.tier === 1);
@@ -22,7 +28,7 @@ export default function DemoDomesticPage() {
     <div>
       <div className="mb-4">
         <p className="cb-mono mb-[7px]">발굴 결과 · {DEMO_DISCOVERED_AT}</p>
-        <h1 className="text-[40px] font-black leading-[1.05] tracking-[-0.045em] text-ink">
+        <h1 className="text-[28px] font-black leading-[1.08] tracking-[-0.04em] text-ink sm:text-[40px] sm:leading-[1.05] sm:tracking-[-0.045em]">
           국내 트렌드
         </h1>
         <p className="mt-3 max-w-[760px] text-[12px] leading-relaxed text-ink-3">
@@ -53,7 +59,7 @@ export default function DemoDomesticPage() {
       </div>
 
       <div className="mb-4 overflow-hidden rounded-[5px] border-2 border-ink">
-        <div className={`${GRID} bg-ink py-[9px]`}>
+        <div className={`${GRID} hidden bg-ink py-[9px] lg:grid`}>
           <span className="cb-th">#</span>
           <span className="cb-th">상승률</span>
           <span className="cb-th">키워드</span>
@@ -97,18 +103,21 @@ function Row({ r, maxScore }: { r: (typeof DEMO_DOMESTIC)[number]; maxScore: num
   const big = r.tier === 1;
   return (
     <div className={`${GRID} ${rowClass(r.tier)}`}>
-      <span
-        className={`cb-num ${big ? "text-[16px] text-ink" : "text-[14px] !font-extrabold text-ink-3"}`}
-      >
-        {String(r.rank).padStart(2, "0")}
-      </span>
-      <span
-        className={`cb-num whitespace-nowrap text-ink ${
-          big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"
-        }`}
-      >
-        +{r.riseRate}%
-      </span>
+      {/* 휴대폰: 순위와 상승률을 한 줄에 나란히. 넓은 화면: 각자 자기 열로. */}
+      <div className="mb-1 flex items-baseline gap-3 lg:mb-0 lg:contents">
+        <span
+          className={`cb-num ${big ? "text-[16px] text-ink" : "text-[14px] !font-extrabold text-ink-3"}`}
+        >
+          {String(r.rank).padStart(2, "0")}
+        </span>
+        <span
+          className={`cb-num whitespace-nowrap text-ink ${
+            big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"
+          }`}
+        >
+          +{r.riseRate}%
+        </span>
+      </div>
       <div className="min-w-0">
         <span
           className={big ? "text-[19px] font-black tracking-[-0.02em]" : "text-[15.5px] font-extrabold"}
@@ -119,29 +128,36 @@ function Row({ r, maxScore }: { r: (typeof DEMO_DOMESTIC)[number]; maxScore: num
           <Badge key={b} kind={b} />
         ))}
       </div>
-      <span className={`cb-num text-right text-ink ${big ? "text-[15px]" : "text-[13px]"}`}>
-        {r.volume.toLocaleString()}
-      </span>
-      <div className="flex flex-col items-start gap-1">
-        <StatusChip status={r.status} />
+      {/* 휴대폰: 검색량·상태·점수를 한 줄 메타로 묶는다. 넓은 화면: 각자 자기 열로. */}
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 lg:mt-0 lg:contents">
+        <span className="text-[11px] text-ink-4 lg:hidden">월 검색량</span>
         <span
-          className={`whitespace-nowrap text-[10.5px] font-semibold ${
-            r.patternUp ? "text-rise-text" : "text-ink-3"
-          }`}
+          className={`cb-num text-ink lg:text-right ${big ? "text-[15px]" : "text-[13px]"}`}
         >
-          {r.pattern}
+          {r.volume.toLocaleString()}
         </span>
-      </div>
-      <div className="flex items-center gap-2.5">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-mutedbg">
-          <div
-            className="h-full rounded-[3px] bg-rise"
-            style={{ width: `${Math.round((r.score / maxScore) * 100)}%` }}
-          />
+        <div className="flex items-center gap-1.5 lg:flex-col lg:items-start lg:gap-1">
+          <StatusChip status={r.status} />
+          <span
+            className={`whitespace-nowrap text-[10.5px] font-semibold ${
+              r.patternUp ? "text-rise-text" : "text-ink-3"
+            }`}
+          >
+            {r.pattern}
+          </span>
         </div>
-        <span className={`cb-num min-w-[24px] text-right ${big ? "text-[17px]" : "text-[15px]"}`}>
-          {r.score}
-        </span>
+        <div className="flex w-full items-center gap-2.5 lg:w-auto">
+          <span className="text-[11px] text-ink-4 lg:hidden">발굴점수</span>
+          <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-mutedbg">
+            <div
+              className="h-full rounded-[3px] bg-rise"
+              style={{ width: `${Math.round((r.score / maxScore) * 100)}%` }}
+            />
+          </div>
+          <span className={`cb-num min-w-[24px] text-right ${big ? "text-[17px]" : "text-[15px]"}`}>
+            {r.score}
+          </span>
+        </div>
       </div>
     </div>
   );

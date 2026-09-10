@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { StoreProvider } from "@/lib/store-context";
 import { Nav } from "@/components/Nav";
+import { Shell } from "@/components/Shell";
 
 export const metadata: Metadata = {
   title: "크림보드",
@@ -19,17 +20,13 @@ export default function RootLayout({
       <body className="min-h-full">
         <StoreProvider>
           {/*
-           * 지면(#EFEADC) 위에 놓인 2px 구획 프레임.
-           * ⚠️ 최소 폭 1240px 을 유지하고 좁은 화면에서는 가로 스크롤로 넘긴다 —
-           *    순위·배수·상태를 한 화면에서 비교하는 것이 이 표의 목적이라
-           *    컬럼을 접으면 화면이 성립하지 않는다.
+           * 셸의 폭 규칙은 실제 대시보드(1240px 고정)와 체험 화면(유동)이 다르다.
+           * 갈리는 지점이 경로라서 클라이언트 컴포넌트로 뺐다 — 자세한 이유는 Shell 주석.
            */}
-          <div className="flex justify-center overflow-x-auto p-7">
-            <div className="cb-shell">
-              <Nav />
-              <main className="px-[26px] pt-6 pb-[30px]">{children}</main>
-            </div>
-          </div>
+          <Shell>
+            <Nav />
+            <main className="px-4 pt-5 pb-7 sm:px-[26px] sm:pt-6 sm:pb-[30px]">{children}</main>
+          </Shell>
         </StoreProvider>
       </body>
     </html>

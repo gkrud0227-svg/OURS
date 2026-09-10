@@ -10,7 +10,9 @@ export const metadata = { title: "크림보드 체험 · 해외 트렌드" };
  * ⚠️ 해외는 국내와 티어 근거가 다르다. 국내 지표는 상승률(%)이라 추세 판정을 묶어 쓰지만,
  *    해외는 지표 자체가 급증 배수라 디자인 명세의 문턱(×4 이상 / ×2~4)을 그대로 쓴다.
  */
-const GRID = "grid grid-cols-[44px_120px_1fr_132px_116px] items-center gap-3 px-4";
+/** 국내 표와 같은 규칙 — 넓은 화면에서만 격자, 휴대폰에서는 세로로 쌓는다. */
+const GRID =
+  "lg:grid lg:grid-cols-[44px_120px_1fr_132px_116px] lg:items-center lg:gap-3 px-4";
 
 export default function DemoGlobalPage() {
   const t1 = DEMO_OVERSEAS.filter((r) => r.tier === 1);
@@ -20,7 +22,7 @@ export default function DemoGlobalPage() {
     <div>
       <div className="mb-4">
         <p className="cb-mono mb-[7px]">발굴 결과 · {DEMO_DISCOVERED_AT}</p>
-        <h1 className="text-[40px] font-black leading-[1.05] tracking-[-0.045em] text-ink">
+        <h1 className="text-[28px] font-black leading-[1.08] tracking-[-0.04em] text-ink sm:text-[40px] sm:leading-[1.05] sm:tracking-[-0.045em]">
           해외 트렌드
         </h1>
         <p className="mt-3 max-w-[760px] text-[12px] leading-relaxed text-ink-3">
@@ -47,7 +49,7 @@ export default function DemoGlobalPage() {
       </div>
 
       <div className="mb-4 overflow-hidden rounded-[5px] border-2 border-ink">
-        <div className={`${GRID} bg-ink py-[9px]`}>
+        <div className={`${GRID} hidden bg-ink py-[9px] lg:grid`}>
           <span className="cb-th">#</span>
           <span className="cb-th">급증 배수</span>
           <span className="cb-th">키워드</span>
@@ -80,18 +82,20 @@ function Row({ r }: { r: (typeof DEMO_OVERSEAS)[number] }) {
   const big = r.tier === 1;
   return (
     <div className={`${GRID} ${rowClass(r.tier)}`}>
-      <span
-        className={`cb-num ${big ? "text-[16px] text-ink" : "text-[14px] !font-extrabold text-ink-3"}`}
-      >
-        {String(r.rank).padStart(2, "0")}
-      </span>
-      <span
-        className={`cb-num whitespace-nowrap text-ink ${
-          big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"
-        }`}
-      >
-        ×{r.lift}
-      </span>
+      <div className="mb-1 flex items-baseline gap-3 lg:mb-0 lg:contents">
+        <span
+          className={`cb-num ${big ? "text-[16px] text-ink" : "text-[14px] !font-extrabold text-ink-3"}`}
+        >
+          {String(r.rank).padStart(2, "0")}
+        </span>
+        <span
+          className={`cb-num whitespace-nowrap text-ink ${
+            big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"
+          }`}
+        >
+          ×{r.lift}
+        </span>
+      </div>
       <div className="min-w-0">
         <span
           className={big ? "text-[19px] font-black tracking-[-0.02em]" : "text-[15.5px] font-extrabold"}
@@ -110,13 +114,17 @@ function Row({ r }: { r: (typeof DEMO_OVERSEAS)[number] }) {
           예: {r.example}
         </p>
       </div>
-      <span className="text-right">
-        <span className={`cb-num text-ink ${big ? "text-[15px]" : "text-[13px]"}`}>{r.videos}</span>
-        <span className="ml-1 text-[11.5px] text-ink-4">({r.channels})</span>
-      </span>
-      <span className={`cb-num text-right text-ink-3 ${big ? "text-[15px]" : "text-[13px]"}`}>
-        {formatCount(r.views)}
-      </span>
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 lg:mt-0 lg:contents">
+        <span className="text-[11px] text-ink-4 lg:hidden">영상수(채널)</span>
+        <span className="lg:text-right">
+          <span className={`cb-num text-ink ${big ? "text-[15px]" : "text-[13px]"}`}>{r.videos}</span>
+          <span className="ml-1 text-[11.5px] text-ink-4">({r.channels})</span>
+        </span>
+        <span className="text-[11px] text-ink-4 lg:hidden">조회수</span>
+        <span className={`cb-num text-ink-3 lg:text-right ${big ? "text-[15px]" : "text-[13px]"}`}>
+          {formatCount(r.views)}
+        </span>
+      </div>
     </div>
   );
 }

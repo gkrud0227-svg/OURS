@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { DEMO_ODM_CANDIDATES } from "@/lib/demo-data";
 import {
   fetchOdm,
   fetchOdmPartners,
@@ -31,6 +32,20 @@ const TONE: Record<"good" | "mid" | "bad" | "muted" | "unknown", string> = {
   bad: "bg-down-soft text-down",
   muted: "bg-[#E9E3D2] text-muted-strong",
   unknown: "bg-[#E9E3D2] text-muted",
+};
+
+/**
+ * 컨택 상태 버튼의 **선택된** 모습.
+ *
+ * ⚠️ TONE 을 그대로 쓰면 "미컨택"(muted)과 "컨택완료"(mid)가 둘 다 같은 회색 면이라
+ *    무엇이 눌려 있는지 구분이 안 된다. 네 상태를 서로 다른 형태로 갈라 둔다.
+ *    그린은 **완료**에만 — 진행중은 아직 완료가 아니라 잉크 면으로 무게만 준다.
+ */
+const CONTACT_SELECTED: Record<ContactStatus, string> = {
+  none: "border-[1.5px] border-ink text-ink",
+  contacted: "bg-rise text-ink",
+  inprogress: "bg-ink text-on-dark",
+  rejected: "bg-mutedbg text-ink-4 line-through",
 };
 
 /** "업체명 제품명" 네이버 검색 URL. */
@@ -63,14 +78,15 @@ export default function OdmPage() {
   /*
    * 체험용(/demo/odm)은 같은 컴포넌트를 그대로 쓰되 **첫 화면만 다르다**.
    *
-   * 1) 팀은 담아둔 컨택 후보를 다시 보러 오지만, QR 로 처음 들어온 사람의 컨택 후보는
-   *    항상 비어 있어서 빈 목록이 첫인상이 된다. 체험에서는 바로 조회부터 보여준다.
-   * 2) ⚠️ 기본 탭이 **제품명 검색**이다. 업체명 검색은 식약처 실시간 조회라
+   * 1) 컨택 후보를 먼저 보여준다 — 컨택 상태 관리가 이 화면의 핵심이라 그걸 먼저 보인다.
+   *    ⚠️ QR 로 처음 들어온 사람의 컨택 후보는 비어 있으므로 아래에서 3건을 미리 채운다.
+   *      안 채우면 빈 목록이 첫인상이 된다.
+   * 2) ⚠️ 조회 기본 탭이 **제품명 검색**이다. 업체명 검색은 식약처 실시간 조회라
    *    **매일 09~19시에 ERROR-503 으로 막힌다** — 배너 QR 을 찍는 시간대가 바로 그때다.
    *    제품명·식품유형 검색은 크론이 받아둔 캐시를 읽어 그 시간대에도 결과가 나온다.
    */
   const isDemoRoute = usePathname().startsWith("/demo");
-  const [mode, setMode] = useState<Mode>(isDemoRoute ? "product" : "company");
+  const [mode, setMode] = useState<Mode>("product");
   /*
    * 검색 화면 / 컨택 후보 화면 전환.
    * 기본은 **컨택 후보** — 이 화면에 다시 들어오는 이유는 대개 "아까 담아둔 업체를 다시
@@ -78,7 +94,7 @@ export default function OdmPage() {
    * ⚠️ 트렌드 탭에서 ?type=·?term= 을 달고 넘어온 경우는 예외다 — 아래 마운트 effect 에서
    *    검색 화면으로 되돌린다. 안 그러면 조회를 걸어놓고 다른 화면을 보여주게 된다.
    */
-  const [view, setView] = useState<"search" | "saved">(isDemoRoute ? "search" : "saved");
+  const [view, setView] = useState<"search" | "saved">("saved");
   const [query, setQuery] = useState("");
   /** 제품명 탭 전용 — 선택적 업체명. 비우면 거래처 전체, 넣으면 그 업체 안에서만. */
   const [companyFilter, setCompanyFilter] = useState("");
@@ -96,7 +112,10 @@ export default function OdmPage() {
   const [inferring, setInferring] = useState(false);
 
   useEffect(() => {
-    setCandidates(loadCandidates());
+    const stored = loadCandidates();
+    // 체험 경로에서만, 그리고 **비어 있을 때만** 시연용 3건을 넣는다.
+    // 방문자가 직접 담은 게 하나라도 있으면 건드리지 않는다.
+    setCandidates(isDemoRoute && stored.length === 0 ? DEMO_ODM_CANDIDATES : stored);
     setHydrated(true);
     // 트렌드 화면에서 "제조처 스크리닝" 으로 넘어온 경우.
     // type = 품목유형(자동 조회), term = 원래 트렌드 키워드(맥락 표시용)
@@ -202,7 +221,7 @@ export default function OdmPage() {
     <div className="space-y-7">
       <header>
         <div className="mb-2.5 flex items-center gap-2.5">
-          <h1 className="text-[40px] font-black leading-[1.05] tracking-[-0.045em] text-ink">제조처 스크리닝</h1>
+          <h1 className="text-[28px] font-black leading-[1.08] tracking-[-0.04em] text-ink sm:text-[40px] sm:leading-[1.05] sm:tracking-[-0.045em]">제조처 스크리닝</h1>
           <span className="rounded-[3px] border-[1.5px] border-ink px-2.5 py-[3px] text-[11px] font-bold text-ink">
             식품안전나라
           </span>
@@ -230,8 +249,8 @@ export default function OdmPage() {
         </button>
         {(
           [
-            ["company", "업체명으로 검색"],
             ["product", "제품명으로 검색"],
+            ["company", "업체명으로 검색"],
             ["foodType", "식품유형으로 역검색"],
           ] as const
         ).map(([m, label]) => (
@@ -465,70 +484,70 @@ export default function OdmPage() {
               아직 저장한 후보가 없습니다. 검색 결과에서 <b className="font-semibold">저장</b>을 눌러보세요.
             </p>
           ) : (
-            <div className="nt-scroll overflow-x-auto">
-              <table className="w-full min-w-[720px] border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-line text-left text-xs text-muted">
-                    <th className="py-2.5 font-semibold">제품</th>
-                    <th className="py-2.5 font-semibold">업체명</th>
-                    <th className="w-28 py-2.5 font-semibold">근거</th>
-                    <th className="w-44 py-2.5 font-semibold">컨택 상태</th>
-                    <th className="w-16 py-2.5 text-center font-semibold">삭제</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {candidates.map((c) => {
-                    const key = candidateKey(c.company, c.product);
-                    return (
-                      <tr key={key} className="border-b border-[#E9E3D2] last:border-0">
-                        <td className="py-3 pr-2 font-semibold text-accent-ink">
-                          {c.product ? (
-                            <ProductLink company={c.company} product={c.product} />
-                          ) : (
-                            <span className="font-normal text-muted">— (업체 전체)</span>
-                          )}
-                        </td>
-                        <td className="py-3 pr-2 text-[13px] text-muted-strong">
-                          <span className="inline-flex items-center gap-1.5">
-                            {c.company}
-                            {isKnownPartner(c.company) && (
-                              <span className="rounded-[3px] bg-rise px-2 py-[2px] text-[10px] font-bold text-ink">
-                                거래처
-                              </span>
-                            )}
-                          </span>
-                        </td>
-                        <td className="py-3 text-xs text-muted">{c.note}</td>
-                        <td className="py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {(["none", "contacted", "inprogress", "rejected"] as const).map((s) => (
-                              <button
-                                key={s}
-                                onClick={() => setStatus(key, s)}
-                                className={`rounded-[3px] px-2 py-[3px] text-[11px] font-bold transition-colors ${
-                                  c.status === s
-                                    ? TONE[CONTACT_META[s].tone]
-                                    : "bg-surface text-muted hover:text-muted-strong"
-                                }`}
-                              >
-                                {CONTACT_META[s].label}
-                              </button>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="py-3 text-center">
-                          <button
-                            onClick={() => removeCandidate(key)}
-                            className="text-xs text-muted transition-colors hover:text-down"
-                          >
-                            삭제
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div>
+              <div className="hidden border-b border-line pb-2.5 text-xs text-muted md:grid md:grid-cols-[1fr_1fr_112px_176px_64px] md:gap-3">
+                <span className="font-semibold">제품</span>
+                <span className="font-semibold">업체명</span>
+                <span className="font-semibold">근거</span>
+                <span className="font-semibold">컨택 상태</span>
+                <span className="text-center font-semibold">삭제</span>
+              </div>
+              {candidates.map((c) => {
+                const key = candidateKey(c.company, c.product);
+                return (
+                  <div
+                    key={key}
+                    className="border-b border-hair py-3 last:border-0 md:grid md:grid-cols-[1fr_1fr_112px_176px_64px] md:items-center md:gap-3"
+                  >
+                    <div className="pr-2 text-sm font-semibold text-ink">
+                      {c.product ? (
+                        <ProductLink company={c.company} product={c.product} />
+                      ) : (
+                        <span className="font-normal text-muted">— (업체 전체)</span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[13px] text-muted-strong md:mt-0">
+                      {c.company}
+                      {isKnownPartner(c.company) && (
+                        <span className="rounded-[3px] bg-rise px-2 py-[2px] text-[10px] font-bold text-ink">
+                          거래처
+                        </span>
+                      )}
+                      <span className="text-xs text-muted md:hidden">· {c.note}</span>
+                    </div>
+                    <div className="hidden text-xs text-muted md:block">{c.note}</div>
+                    <div className="mt-2 flex flex-wrap gap-1 md:mt-0">
+                      {(["none", "contacted", "inprogress", "rejected"] as const).map((st) => (
+                        <button
+                          key={st}
+                          onClick={() => setStatus(key, st)}
+                          className={`rounded-[3px] px-2 py-[4px] text-[11px] font-bold transition-colors ${
+                            c.status === st
+                              ? CONTACT_SELECTED[st]
+                              : "border border-chip text-ink-4 hover:text-ink-2"
+                          }`}
+                        >
+                          {CONTACT_META[st].label}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => removeCandidate(key)}
+                        className="ml-auto text-xs text-muted transition-colors hover:text-down md:hidden"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                    <div className="hidden text-center md:block">
+                      <button
+                        onClick={() => removeCandidate(key)}
+                        className="text-xs text-muted transition-colors hover:text-down"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>

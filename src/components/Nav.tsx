@@ -62,32 +62,34 @@ export function Nav() {
   const links = demo ? DEMO_LINKS : LINKS;
 
   return (
-    <header className="flex h-16 items-center gap-6 border-b-2 border-ink bg-surface px-[26px]">
+    <header className="flex flex-col border-b-2 border-ink bg-surface sm:h-16 sm:flex-row sm:items-center sm:gap-6 sm:px-[26px]">
+      <div className="flex items-center gap-3 px-3 pt-2.5 pb-1.5 sm:contents">
       <Link href={demo ? "/demo" : "/"} className="flex shrink-0 items-center gap-[11px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/pulmuone-logo.png" alt="Pulmuone" className="block h-[30px] w-auto" />
-        <span className="block h-[22px] w-[1.5px] bg-chip" />
-        <span className="whitespace-nowrap text-[19px] font-black tracking-[-0.03em] text-ink">
+        <img src="/pulmuone-logo.png" alt="Pulmuone" className="block h-[24px] w-auto sm:h-[30px]" />
+        <span className="hidden h-[22px] w-[1.5px] bg-chip sm:block" />
+        <span className="whitespace-nowrap text-[16px] font-black tracking-[-0.03em] text-ink sm:text-[19px]">
           크림보드
         </span>
-        <span className="cb-mono whitespace-nowrap rounded-[3px] bg-rise px-[7px] py-1 !text-[10px] !tracking-[0.1em] !text-ink">
+        <span className="cb-mono hidden whitespace-nowrap rounded-[3px] bg-rise px-[7px] py-1 !text-[10px] !tracking-[0.1em] !text-ink lg:inline">
           CREAM RISES
         </span>
         {demo && (
-          <span className="whitespace-nowrap rounded-[3px] border-[1.5px] border-ink px-2 py-[3px] text-[11px] font-extrabold text-ink">
+          <span className="whitespace-nowrap rounded-[3px] border-[1.5px] border-ink px-1.5 py-[2px] text-[10.5px] font-extrabold text-ink sm:px-2 sm:py-[3px] sm:text-[11px]">
             체험용
           </span>
         )}
       </Link>
+      </div>
 
-      <nav className="nt-scroll ml-1.5 flex min-w-0 items-center gap-0.5 overflow-x-auto">
+      <nav className="nt-scroll flex min-w-0 items-center gap-0.5 overflow-x-auto px-3 pb-2 sm:ml-1.5 sm:px-0 sm:pb-0">
         {links.map((link) => {
           const active = isActive(pathname, link.href);
           return (
             <Link
               key={link.href}
               href={link.href}
-              className={`cb-row-hover shrink-0 whitespace-nowrap px-[13px] py-2 text-[13px] ${
+              className={`cb-row-hover shrink-0 whitespace-nowrap px-2.5 py-2 text-[12.5px] sm:px-[13px] sm:text-[13px] ${
                 active
                   ? "rounded-[4px] bg-ink font-extrabold text-on-dark"
                   : "font-medium text-ink-2 hover:text-ink"
@@ -107,7 +109,7 @@ export function Nav() {
           </svg>
           <span className="whitespace-nowrap text-[12.5px] text-ink-4">키워드·카테고리 검색</span>
         </div>
-        <div className="flex h-8 w-8 items-center justify-center rounded-[4px] bg-ink text-[12.5px] font-black text-on-dark">
+        <div className="hidden h-8 w-8 items-center justify-center rounded-[4px] bg-ink text-[12.5px] font-black text-on-dark sm:flex">
           전
         </div>
       </div>
