@@ -76,7 +76,7 @@ export function Nav() {
         </span>
         {demo && (
           <span className="whitespace-nowrap rounded-[3px] border-[1.5px] border-ink px-1.5 py-[2px] text-[10.5px] font-extrabold text-ink sm:px-2 sm:py-[3px] sm:text-[11px]">
-            체험용
+            데모
           </span>
         )}
       </Link>

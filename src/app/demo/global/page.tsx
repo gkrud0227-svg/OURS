@@ -15,7 +15,8 @@ export const metadata = { title: "크림보드 체험 · 해외 트렌드" };
  * ⚠️ 키워드가 순위 바로 뒤다. 먼저 읽혀야 하는 건 "무엇이" 뜨는가지 "얼마나" 가 아니다.
  */
 const GRID =
-  "lg:grid lg:grid-cols-[44px_1fr_120px_132px_116px] lg:items-center lg:gap-3 px-4";
+  "grid grid-cols-[38px_1fr] gap-x-3 px-4 " +
+  "lg:grid-cols-[44px_1fr_120px_132px_116px] lg:items-center lg:gap-3";
 
 export default function DemoGlobalPage() {
   const t1 = DEMO_OVERSEAS.filter((r) => r.tier === 1);
@@ -86,8 +87,8 @@ function Row({ r }: { r: (typeof DEMO_OVERSEAS)[number] }) {
   return (
     <div className={`${GRID} ${rowClass(r.tier)}`}>
       <span
-        className={`cb-num mb-1 block lg:mb-0 ${
-          big ? "text-[16px] text-ink" : "text-[14px] !font-extrabold text-ink-3"
+        className={`cb-num self-start leading-none ${
+          big ? "text-[24px] text-ink lg:text-[16px]" : "text-[20px] text-ink-3 lg:text-[14px] lg:!font-extrabold"
         }`}
       >
         {String(r.rank).padStart(2, "0")}
@@ -111,14 +112,14 @@ function Row({ r }: { r: (typeof DEMO_OVERSEAS)[number] }) {
         </p>
       </div>
       <span
-        className={`cb-num mt-1.5 block whitespace-nowrap text-ink lg:mt-0 ${
+        className={`cb-num col-start-2 mt-1.5 block whitespace-nowrap text-ink lg:col-start-auto lg:mt-0 ${
           big ? "text-[20px] tracking-[-0.03em]" : "text-[16px] tracking-[-0.02em]"
         }`}
       >
         ×{r.lift}
       </span>
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 lg:mt-0 lg:contents">
+      <div className="col-start-2 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 lg:col-start-auto lg:mt-0 lg:contents">
         <span className="text-[11px] text-ink-4 lg:hidden">영상수(채널)</span>
         <span className="lg:text-right">
           <span className={`cb-num text-ink ${big ? "text-[15px]" : "text-[13px]"}`}>{r.videos}</span>
