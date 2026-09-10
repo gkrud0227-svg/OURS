@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Badge, StatusChip, TierBand, rowClass } from "@/components/DemoTable";
+import { TierBand } from "@/components/DemoTable";
+import { DomesticRows } from "./DomesticRows";
 import { DEMO_DOMESTIC, DEMO_DOMESTIC_AT } from "@/lib/demo-data";
-import { formatCount } from "@/lib/format";
 
 export const metadata = { title: "크림보드 체험 · 국내 트렌드" };
 
@@ -70,19 +70,17 @@ export default function DemoDomesticPage() {
         </div>
 
         <TierBand tier={1} label="TIER 1 · 크림 — 급상승" note={`즉시 검토 ${t1.length}건`} />
-        {t1.map((r) => (
-          <Row key={r.name} r={r} maxScore={maxScore} />
-        ))}
+        <DomesticRows rows={t1} maxScore={maxScore} />
 
         <TierBand tier={2} label="TIER 2 · 우선 — 상승세" note={`${t2.length}건 · 다음 크림 후보`} />
-        {t2.map((r) => (
-          <Row key={r.name} r={r} maxScore={maxScore} />
-        ))}
+        <DomesticRows rows={t2} maxScore={maxScore} />
       </div>
 
       <p className="text-[12px] leading-relaxed text-ink-3">
         <b className="font-bold text-ink">발굴점수</b> = 검색량 40% + 상승률 60% + 추세 패턴 보너스.
-        정렬은 발굴점수 기준이고, 구매 의향(쇼핑)은 함께 표시만 하며 점수에는 넣지 않습니다.
+        정렬은 발굴점수 기준이고, 구매 의향(쇼핑)은 함께 표시만 하며 점수에는 넣지 않습니다.{" "}
+        <b className="font-bold text-ink">키워드를 누르면</b> 그 키워드가 나온 인기 영상의 시청자
+        댓글에서 집계한 <b className="font-bold text-ink">확산 이유</b>가 펼쳐집니다.
       </p>
 
       <div className="mt-7 flex flex-wrap items-center gap-3 rounded-[5px] border-[1.5px] border-ink bg-surface px-4 py-3.5">
@@ -99,68 +97,3 @@ export default function DemoDomesticPage() {
     </div>
   );
 }
-
-function Row({ r, maxScore }: { r: (typeof DEMO_DOMESTIC)[number]; maxScore: number }) {
-  const big = r.tier === 1;
-  return (
-    <div className={`${GRID} ${rowClass(r.tier)}`}>
-      {/* 휴대폰: 순위와 상승률을 한 줄에 나란히. 넓은 화면: 각자 자기 열로. */}
-      <div className="mb-1 flex items-baseline gap-3 lg:mb-0 lg:contents">
-        <span
-          className={`cb-num ${big ? "text-[16px] text-ink" : "text-[14px] !font-extrabold text-ink-3"}`}
-        >
-          {String(r.rank).padStart(2, "0")}
-        </span>
-        <span
-          className={`cb-num whitespace-nowrap text-ink ${
-            big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"
-          }`}
-        >
-          +{r.riseRate.toFixed(1)}%
-        </span>
-      </div>
-      <div className="min-w-0">
-        <span
-          className={big ? "text-[19px] font-black tracking-[-0.02em]" : "text-[15.5px] font-extrabold"}
-        >
-          {r.name}
-        </span>
-        {r.badges.map((b) => (
-          <Badge key={b} kind={b} />
-        ))}
-      </div>
-      {/* 휴대폰: 검색량·상태·점수를 한 줄 메타로 묶는다. 넓은 화면: 각자 자기 열로. */}
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 lg:mt-0 lg:contents">
-        <span className="text-[11px] text-ink-4 lg:hidden">월 검색량</span>
-        <span
-          className={`cb-num text-ink lg:text-right ${big ? "text-[15px]" : "text-[13px]"}`}
-        >
-          {r.volume > 0 ? formatCount(r.volume) : "—"}
-        </span>
-        <div className="flex items-center gap-1.5 lg:flex-col lg:items-start lg:gap-1">
-          <StatusChip status={r.status} />
-          <span
-            className={`whitespace-nowrap text-[10.5px] font-semibold ${
-              r.patternUp ? "text-rise-text" : "text-ink-3"
-            }`}
-          >
-            {r.pattern}
-          </span>
-        </div>
-        <div className="flex w-full items-center gap-2.5 lg:w-auto">
-          <span className="text-[11px] text-ink-4 lg:hidden">발굴점수</span>
-          <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-mutedbg">
-            <div
-              className="h-full rounded-[3px] bg-rise"
-              style={{ width: `${Math.round((r.score / maxScore) * 100)}%` }}
-            />
-          </div>
-          <span className={`cb-num min-w-[24px] text-right ${big ? "text-[17px]" : "text-[15px]"}`}>
-            {r.score}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-

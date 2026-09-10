@@ -311,3 +311,156 @@ export const DEMO_ODM_CANDIDATES = [
     savedAt: "2026-08-12T02:15:00.000Z",
   },
 ];
+
+/**
+ * 키워드별 확산 이유 — 그 키워드가 나온 **인기 영상의 시청자 댓글**을 사전으로 집계한 것.
+ *
+ * ⚠️ 실제 값이다. 2026-09-10 회차 후보 11개를 실제 대시보드에서 하나씩 돌려(키워드당 약
+ *    104 units) 받은 결과를 그대로 옮겼다. 지어낸 태그가 아니다.
+ * ⚠️ `토마토`는 카테고리가 0건이다. **비워 두는 게 맞다** — 이유를 못 찾은 것이지 이유가
+ *    없는 게 아니고, 억지로 채우면 "댓글 기반"이라는 말이 거짓이 된다. 화면도 실제와 같이
+ *    "뚜렷한 이유 신호가 없어요"로 그린다.
+ * ⚠️ `docHits`(언급 영상 수)가 3 미만이면 실제 화면이 "표본이 얇아 참고용"이라고 덧붙인다.
+ *    같은 문턱(MIN_DOC_HITS)을 체험에서도 쓴다.
+ */
+export interface DemoReasonCategory {
+  label: string;
+  /** 이 카테고리 단어가 하나라도 나온 댓글 수 */
+  docHits: number;
+  /** 언급 비율(%) — 실제 화면이 반올림해 보여주는 값 그대로 */
+  sharePct: number;
+  /** 실제로 잡힌 상위 단어 */
+  words: string[];
+}
+
+export interface DemoReason {
+  /** 집계에 쓴 댓글 수 */
+  comments: number;
+  /** 집계에 쓴 영상 수 */
+  videos: number;
+  /** 대표 이유 — 표본이 얇으면 null */
+  dominant: string | null;
+  categories: DemoReasonCategory[];
+}
+
+export const DEMO_REASONS: Record<string, DemoReason> = {
+  민음사빵: {
+    comments: 328,
+    videos: 4,
+    dominant: "희소성",
+    categories: [
+      { label: "희소성", docHits: 7, sharePct: 2, words: ["품절", "대란", "못구"] },
+      { label: "비주얼·인증샷", docHits: 3, sharePct: 1, words: ["예쁘", "비주얼", "감성"] },
+      { label: "맛 궁합", docHits: 2, sharePct: 1, words: ["어울리"] },
+      { label: "식감", docHits: 2, sharePct: 1, words: ["부드럽", "말랑"] },
+      { label: "계절 연상", docHits: 1, sharePct: 0, words: ["더위"] },
+    ],
+  },
+  한정선: {
+    comments: 400,
+    videos: 4,
+    dominant: "희소성",
+    categories: [
+      { label: "희소성", docHits: 48, sharePct: 12, words: ["한정"] },
+      { label: "비주얼·인증샷", docHits: 18, sharePct: 5, words: ["감성", "예쁘", "비주얼"] },
+      { label: "계절 연상", docHits: 3, sharePct: 1, words: ["겨울", "따뜻한", "복날"] },
+    ],
+  },
+  민음사: {
+    comments: 400,
+    videos: 4,
+    dominant: "맛 궁합",
+    categories: [
+      { label: "맛 궁합", docHits: 3, sharePct: 1, words: ["어울리", "밸런스"] },
+      { label: "비주얼·인증샷", docHits: 3, sharePct: 1, words: ["감성", "예쁘"] },
+      { label: "계절 연상", docHits: 1, sharePct: 0, words: ["시원"] },
+      { label: "희소성", docHits: 1, sharePct: 0, words: ["한정"] },
+    ],
+  },
+  "롯데 군위사과": {
+    comments: 139,
+    videos: 4,
+    dominant: "식감",
+    categories: [
+      { label: "식감", docHits: 5, sharePct: 4, words: ["쫀득", "쫄깃", "바삭"] },
+      { label: "비주얼·인증샷", docHits: 2, sharePct: 1, words: ["예쁘"] },
+      { label: "희소성", docHits: 2, sharePct: 1, words: ["품절", "대란"] },
+      { label: "맛 궁합", docHits: 1, sharePct: 1, words: ["어울리"] },
+    ],
+  },
+  군위사과: {
+    comments: 328,
+    videos: 4,
+    dominant: "식감",
+    categories: [
+      { label: "식감", docHits: 5, sharePct: 2, words: ["쫀득", "쫄깃", "바삭"] },
+      { label: "희소성", docHits: 3, sharePct: 1, words: ["품절", "대란"] },
+      { label: "맛 궁합", docHits: 3, sharePct: 1, words: ["고소", "달콤", "어울리"] },
+      { label: "비주얼·인증샷", docHits: 2, sharePct: 1, words: ["예쁘"] },
+      { label: "계절 연상", docHits: 1, sharePct: 0, words: ["시원"] },
+    ],
+  },
+  "한정선 요거트 찹쌀떡": {
+    comments: 300,
+    videos: 4,
+    dominant: "희소성",
+    categories: [
+      { label: "희소성", docHits: 32, sharePct: 11, words: ["한정"] },
+      { label: "비주얼·인증샷", docHits: 10, sharePct: 3, words: ["예쁘", "비주얼"] },
+      { label: "식감", docHits: 5, sharePct: 2, words: ["쫄깃", "쫀득", "말랑"] },
+      { label: "맛 궁합", docHits: 4, sharePct: 1, words: ["달콤", "달달"] },
+      { label: "계절 연상", docHits: 1, sharePct: 0, words: ["시원"] },
+    ],
+  },
+  요거트찹쌀떡: {
+    comments: 290,
+    videos: 4,
+    dominant: "비주얼·인증샷",
+    categories: [
+      { label: "비주얼·인증샷", docHits: 13, sharePct: 4, words: ["예쁘", "비주얼", "감성", "색감"] },
+      { label: "희소성", docHits: 8, sharePct: 3, words: ["한정"] },
+      { label: "식감", docHits: 4, sharePct: 1, words: ["쫀득", "바삭", "쫄깃"] },
+    ],
+  },
+  고구마: {
+    comments: 154,
+    videos: 4,
+    dominant: "계절 연상",
+    categories: [
+      { label: "계절 연상", docHits: 4, sharePct: 3, words: ["시원"] },
+      { label: "식감", docHits: 1, sharePct: 1, words: ["쫄깃"] },
+      { label: "맛 궁합", docHits: 1, sharePct: 1, words: ["달콤"] },
+    ],
+  },
+  토마토: {
+    comments: 400,
+    videos: 4,
+    dominant: null,
+    categories: [],
+  },
+  무화과: {
+    comments: 197,
+    videos: 4,
+    dominant: null,
+    categories: [
+      { label: "맛 궁합", docHits: 2, sharePct: 1, words: ["달콤", "달달"] },
+      { label: "계절 연상", docHits: 2, sharePct: 1, words: ["따뜻한", "겨울"] },
+      { label: "비주얼·인증샷", docHits: 1, sharePct: 1, words: ["때깔"] },
+    ],
+  },
+  찹쌀떡: {
+    comments: 381,
+    videos: 4,
+    dominant: "식감",
+    categories: [
+      { label: "식감", docHits: 16, sharePct: 4, words: ["쫀득", "말랑", "바삭", "꾸덕"] },
+      { label: "맛 궁합", docHits: 4, sharePct: 1, words: ["고소", "어울리", "단짠"] },
+      { label: "희소성", docHits: 3, sharePct: 1, words: ["품절"] },
+      { label: "비주얼·인증샷", docHits: 2, sharePct: 1, words: ["비주얼", "예쁘"] },
+      { label: "계절 연상", docHits: 1, sharePct: 0, words: ["여름"] },
+    ],
+  },
+};
+
+/** 이 개수 미만으로 언급되면 실제 화면이 "표본이 얇아 참고용"이라고 덧붙인다. */
+export const DEMO_MIN_DOC_HITS = 3;
