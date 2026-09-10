@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, StatusChip, rowClass } from "@/components/DemoTable";
+import { Badge, rowClass } from "@/components/DemoTable";
 import {
   DEMO_MIN_DOC_HITS,
   DEMO_REASONS,
@@ -106,7 +106,6 @@ function MobileRow({
           <span className="cb-num text-[17px] leading-none tracking-[-0.03em] text-ink">
             +{r.riseRate.toFixed(1)}%
           </span>
-          <StatusChip status={r.status} />
           <span
             className={`whitespace-nowrap text-[10.5px] font-semibold ${
               r.patternUp ? "text-rise-text" : "text-ink-3"
@@ -181,16 +180,14 @@ function DesktopRow({
       <span className={`cb-num text-right text-ink ${big ? "text-[15px]" : "text-[13px]"}`}>
         {r.volume > 0 ? formatCount(r.volume) : "—"}
       </span>
-      <div className="flex flex-col items-start gap-1">
-        <StatusChip status={r.status} />
-        <span
-          className={`whitespace-nowrap text-[10.5px] font-semibold ${
-            r.patternUp ? "text-rise-text" : "text-ink-3"
-          }`}
-        >
-          {r.pattern}
-        </span>
-      </div>
+      {/* 티어 밴드가 급상승/상승을 이미 말한다 — 상태 배지 없이 패턴만 남긴다. */}
+      <span
+        className={`whitespace-nowrap text-[11px] font-semibold ${
+          r.patternUp ? "text-rise-text" : "text-ink-3"
+        }`}
+      >
+        {r.pattern}
+      </span>
       <div className="flex items-center gap-2.5">
         <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-mutedbg">
           <div

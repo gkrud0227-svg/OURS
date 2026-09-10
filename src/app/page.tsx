@@ -277,8 +277,13 @@ function RankRow({
         {c.volumeTotal > 0 ? formatCount(c.volumeTotal) : "—"}
       </span>
 
+      {/*
+        티어 밴드가 급상승/상승을 이미 말하므로 TIER 1·2 에서는 상태 배지를 빼고
+        패턴만 남긴다.
+        ⚠️ TIER 3 은 밴드가 "유지·하락" 두 상태를 묶고 있어 배지가 아직 구분을 준다.
+      */}
       <div className="flex flex-col items-start gap-1">
-        <StatusBadge status={c.status} />
+        {tier === 3 && <StatusBadge status={c.status} />}
         <PatternTag pattern={c.pattern} streak={c.streak} />
       </div>
 

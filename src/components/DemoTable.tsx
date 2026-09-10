@@ -59,18 +59,3 @@ export function rowClass(tier: DemoTier): string {
     ? "border-b-[1.5px] border-ink bg-row1 py-[15px]"
     : "border-b border-hair bg-row2 py-[11px]";
 }
-
-/** 상태 배지 — 급상승만 그린 면, 상승은 잉크 외곽선. */
-export function StatusChip({ status }: { status: "급상승" | "상승" }) {
-  return (
-    <span
-      className={`inline-flex h-[22px] items-center whitespace-nowrap rounded-[3px] px-2 text-[11.5px] font-extrabold ${
-        status === "급상승"
-          ? "border-[1.5px] border-transparent bg-rise text-ink"
-          : "border-[1.5px] border-ink text-ink"
-      }`}
-    >
-      {status}
-    </span>
-  );
-}
