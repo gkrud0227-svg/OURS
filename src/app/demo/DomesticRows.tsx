@@ -17,9 +17,15 @@ import { formatCount } from "@/lib/format";
  *
  * ⚠️ 한 번에 하나만 펼친다. 여러 개를 동시에 열면 휴대폰에서 표가 세로로 끝없이
  *    늘어나 순위를 훑는다는 본래 목적이 사라진다.
+ *
+ * ⚠️ 휴대폰과 넓은 화면의 배치를 **따로 그린다**(하나를 반응형으로 접지 않는다).
+ *    두 화면에서 열 순서가 다르기 때문이다 — 넓은 화면은 실제 대시보드와 같이
+ *    `순위 → 상승률 → 키워드` 지만, 휴대폰에서 그 순서를 쓰면 제일 큰 글자가
+ *    상승률이 되어 **순위가 안 읽힌다**(실사용 피드백). 휴대폰은 순위를 왼쪽
+ *    거터로 빼서 세로로 줄을 세우고, 키워드를 첫 줄로 올린다.
  */
-const GRID =
-  "lg:grid lg:grid-cols-[44px_120px_1fr_100px_120px_140px] lg:items-center lg:gap-3 px-4";
+const DESKTOP_GRID =
+  "hidden lg:grid lg:grid-cols-[44px_120px_1fr_100px_120px_140px] lg:items-center lg:gap-3";
 
 export function DomesticRows({
   rows,
@@ -33,93 +39,168 @@ export function DomesticRows({
   return (
     <>
       {rows.map((r) => {
-        const big = r.tier === 1;
         const expanded = open === r.name;
-        const reason = DEMO_REASONS[r.name];
         return (
           <div key={r.name}>
             <button
               type="button"
               onClick={() => setOpen(expanded ? null : r.name)}
               aria-expanded={expanded}
-              className={`${GRID} ${rowClass(r.tier)} cb-row-hover w-full text-left ${
-                expanded ? "!bg-mutedbg" : big ? "hover:bg-row2" : "hover:bg-mutedbg"
+              className={`cb-row-hover w-full px-4 text-left ${rowClass(r.tier)} ${
+                expanded ? "!bg-mutedbg" : r.tier === 1 ? "hover:bg-row2" : "hover:bg-mutedbg"
               }`}
             >
-              <div className="mb-1 flex items-baseline gap-3 lg:mb-0 lg:contents">
-                <span
-                  className={`cb-num ${
-                    big ? "text-[16px] text-ink" : "text-[14px] !font-extrabold text-ink-3"
-                  }`}
-                >
-                  {String(r.rank).padStart(2, "0")}
-                </span>
-                <span
-                  className={`cb-num whitespace-nowrap text-ink ${
-                    big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"
-                  }`}
-                >
-                  +{r.riseRate.toFixed(1)}%
-                </span>
-              </div>
-
-              <div className="min-w-0">
-                <span
-                  className={
-                    big
-                      ? "text-[19px] font-black tracking-[-0.02em] underline decoration-chip decoration-2 underline-offset-4"
-                      : "text-[15.5px] font-extrabold underline decoration-chip decoration-2 underline-offset-4"
-                  }
-                >
-                  {r.name}
-                </span>
-                {r.badges.map((b) => (
-                  <Badge key={b} kind={b} />
-                ))}
-                <span className="ml-2 whitespace-nowrap text-[11px] font-bold text-ink-4">
-                  {expanded ? "이유 닫기 ▴" : "확산이유 ▾"}
-                </span>
-              </div>
-
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 lg:mt-0 lg:contents">
-                <span className="text-[11px] text-ink-4 lg:hidden">월 검색량</span>
-                <span
-                  className={`cb-num text-ink lg:text-right ${big ? "text-[15px]" : "text-[13px]"}`}
-                >
-                  {r.volume > 0 ? formatCount(r.volume) : "—"}
-                </span>
-                <div className="flex items-center gap-1.5 lg:flex-col lg:items-start lg:gap-1">
-                  <StatusChip status={r.status} />
-                  <span
-                    className={`whitespace-nowrap text-[10.5px] font-semibold ${
-                      r.patternUp ? "text-rise-text" : "text-ink-3"
-                    }`}
-                  >
-                    {r.pattern}
-                  </span>
-                </div>
-                <div className="flex w-full items-center gap-2.5 lg:w-auto">
-                  <span className="text-[11px] text-ink-4 lg:hidden">발굴점수</span>
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-mutedbg">
-                    <div
-                      className="h-full rounded-[3px] bg-rise"
-                      style={{ width: `${Math.round((r.score / maxScore) * 100)}%` }}
-                    />
-                  </div>
-                  <span
-                    className={`cb-num min-w-[24px] text-right ${big ? "text-[17px]" : "text-[15px]"}`}
-                  >
-                    {r.score}
-                  </span>
-                </div>
-              </div>
+              <MobileRow r={r} maxScore={maxScore} expanded={expanded} />
+              <DesktopRow r={r} maxScore={maxScore} expanded={expanded} />
             </button>
 
-            {expanded && <ReasonPanel term={r.name} reason={reason} />}
+            {expanded && <ReasonPanel term={r.name} reason={DEMO_REASONS[r.name]} />}
           </div>
         );
       })}
     </>
+  );
+}
+
+/**
+ * 휴대폰 배치 — 왼쪽 38px 거터에 순위, 오른쪽에 내용.
+ * 거터 덕분에 01·02·03… 이 세로로 정렬돼 훑을 때 순위가 먼저 읽힌다.
+ */
+function MobileRow({
+  r,
+  maxScore,
+  expanded,
+}: {
+  r: DemoDomesticRow;
+  maxScore: number;
+  expanded: boolean;
+}) {
+  const big = r.tier === 1;
+  return (
+    <div className="grid grid-cols-[38px_1fr] gap-x-3 lg:hidden">
+      <span
+        className={`cb-num self-start leading-none ${
+          big ? "text-[24px] text-ink" : "text-[20px] text-ink-3"
+        }`}
+      >
+        {String(r.rank).padStart(2, "0")}
+      </span>
+
+      <div className="min-w-0">
+        <div>
+          <span
+            className={`${
+              big ? "text-[18px] font-black tracking-[-0.02em]" : "text-[15.5px] font-extrabold"
+            } underline decoration-chip decoration-2 underline-offset-4`}
+          >
+            {r.name}
+          </span>
+          {r.badges.map((b) => (
+            <Badge key={b} kind={b} />
+          ))}
+        </div>
+
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <span className="cb-num text-[20px] leading-none tracking-[-0.03em] text-ink">
+            +{r.riseRate.toFixed(1)}%
+          </span>
+          <StatusChip status={r.status} />
+          <span
+            className={`whitespace-nowrap text-[10.5px] font-semibold ${
+              r.patternUp ? "text-rise-text" : "text-ink-3"
+            }`}
+          >
+            {r.pattern}
+          </span>
+        </div>
+
+        <div className="mt-2 flex items-center gap-2.5">
+          <span className="whitespace-nowrap text-[11px] text-ink-4">
+            검색 <span className="cb-num text-[12px] text-ink">
+              {r.volume > 0 ? formatCount(r.volume) : "—"}
+            </span>
+          </span>
+          <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-mutedbg">
+            <div
+              className="h-full rounded-[3px] bg-rise"
+              style={{ width: `${Math.round((r.score / maxScore) * 100)}%` }}
+            />
+          </div>
+          <span className="cb-num min-w-[22px] text-right text-[15px]">{r.score}</span>
+          <span className="whitespace-nowrap text-[11px] font-bold text-ink-4">
+            {expanded ? "이유 ▴" : "이유 ▾"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** 넓은 화면 배치 — 실제 대시보드와 같은 열 순서(순위 → 상승률 → 키워드 → …). */
+function DesktopRow({
+  r,
+  maxScore,
+  expanded,
+}: {
+  r: DemoDomesticRow;
+  maxScore: number;
+  expanded: boolean;
+}) {
+  const big = r.tier === 1;
+  return (
+    <div className={DESKTOP_GRID}>
+      <span
+        className={`cb-num ${big ? "text-[16px] text-ink" : "text-[14px] !font-extrabold text-ink-3"}`}
+      >
+        {String(r.rank).padStart(2, "0")}
+      </span>
+      <span
+        className={`cb-num whitespace-nowrap text-ink ${
+          big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"
+        }`}
+      >
+        +{r.riseRate.toFixed(1)}%
+      </span>
+      <div className="min-w-0">
+        <span
+          className={`${
+            big ? "text-[19px] font-black tracking-[-0.02em]" : "text-[15.5px] font-extrabold"
+          } underline decoration-chip decoration-2 underline-offset-4`}
+        >
+          {r.name}
+        </span>
+        {r.badges.map((b) => (
+          <Badge key={b} kind={b} />
+        ))}
+        <span className="ml-2 whitespace-nowrap text-[11px] font-bold text-ink-4">
+          {expanded ? "이유 닫기 ▴" : "확산이유 ▾"}
+        </span>
+      </div>
+      <span className={`cb-num text-right text-ink ${big ? "text-[15px]" : "text-[13px]"}`}>
+        {r.volume > 0 ? formatCount(r.volume) : "—"}
+      </span>
+      <div className="flex flex-col items-start gap-1">
+        <StatusChip status={r.status} />
+        <span
+          className={`whitespace-nowrap text-[10.5px] font-semibold ${
+            r.patternUp ? "text-rise-text" : "text-ink-3"
+          }`}
+        >
+          {r.pattern}
+        </span>
+      </div>
+      <div className="flex items-center gap-2.5">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-mutedbg">
+          <div
+            className="h-full rounded-[3px] bg-rise"
+            style={{ width: `${Math.round((r.score / maxScore) * 100)}%` }}
+          />
+        </div>
+        <span className={`cb-num min-w-[24px] text-right ${big ? "text-[17px]" : "text-[15px]"}`}>
+          {r.score}
+        </span>
+      </div>
+    </div>
   );
 }
 
