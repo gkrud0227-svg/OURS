@@ -134,20 +134,24 @@ const KpiSep = () => <span className="h-[14px] w-px bg-divider" />;
 
 /**
  * 랭킹 표의 컬럼 격자 — 헤더·모든 티어 행이 **같은 값**을 써야 열이 맞는다.
- * 순위 / 상승률 / 키워드 / 월 검색량 / 상태 / 발굴점수 / 저장
+ * 순위 / 키워드 / 상승률 / 월 검색량 / 상태 / 발굴점수 / 4주 추이 / 저장
+ *
+ * ⚠️ 키워드가 순위 바로 뒤에 온다. 이 표에서 먼저 읽혀야 하는 건 "무엇이" 뜨는가지
+ *    "얼마나" 가 아니다 — 수치를 앞에 두면 눈이 숫자에 먼저 붙어 이름이 밀린다.
  */
 const ROW_GRID =
-  "grid grid-cols-[44px_132px_1fr_92px_124px_128px_104px_76px] items-center gap-3";
+  "grid grid-cols-[44px_1fr_132px_92px_124px_128px_104px_76px] items-center gap-3";
 
 /** TIER 3 을 칩으로 접어 둘 때 먼저 보여줄 개수. */
 const TIER3_CHIPS = 8;
 
 /**
  * 해외 랭킹의 컬럼 격자 — 국내와 같은 규격, 컬럼만 다르다.
- * 순위 / 급증 배수 / 키워드 / 영상수(채널) / 조회수(참고) / 저장
+ * 순위 / 키워드 / 급증 배수 / 영상수(채널) / 조회수(참고) / 저장
+ * ⚠️ 국내와 마찬가지로 키워드가 먼저다(무엇이 뜨는가 → 얼마나).
  */
 const OS_ROW_GRID =
-  "grid grid-cols-[44px_132px_1fr_132px_116px_76px] items-center gap-3";
+  "grid grid-cols-[44px_1fr_132px_132px_116px_76px] items-center gap-3";
 
 /**
  * 해외 티어 문턱 — 디자인 명세 그대로 급증 배수 기준이다(×4 이상 / ×2~4 / ×2 미만).
@@ -230,16 +234,8 @@ function RankRow({
         {String(c.rank).padStart(2, "0")}
       </span>
 
-      <span
-        className={`cb-num whitespace-nowrap ${big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"} ${
-          c.riseRate !== null && c.riseRate < 0 ? "text-ink-3" : "text-ink"
-        }`}
-      >
-        {formatPct(c.riseRate)}
-      </span>
-
       <div className="min-w-0">
-        <span className={big ? "text-[19px] font-black tracking-[-0.02em]" : "text-[15.5px] font-extrabold"}>
+        <span className={big ? "text-[21px] font-black tracking-[-0.02em]" : "text-[16px] font-extrabold"}>
           {c.name}
         </span>
         {tm && (
@@ -268,6 +264,14 @@ function RankRow({
           </span>
         )}
       </div>
+
+      <span
+        className={`cb-num whitespace-nowrap ${big ? "text-[20px] tracking-[-0.03em]" : "text-[16px] tracking-[-0.02em]"} ${
+          c.riseRate !== null && c.riseRate < 0 ? "text-ink-3" : "text-ink"
+        }`}
+      >
+        {formatPct(c.riseRate)}
+      </span>
 
       <span className={`cb-num text-right ${big ? "text-[15px]" : "text-[13px]"} !font-extrabold text-ink`}>
         {c.volumeTotal > 0 ? formatCount(c.volumeTotal) : "—"}
@@ -845,8 +849,8 @@ export default function DiscoveryDashboard() {
             {/* 표 헤더 — 잉크 면 위 mono 라벨 */}
             <div className={`${ROW_GRID} sticky top-0 z-[2] bg-ink px-4 py-[9px]`}>
               <span className="cb-th">#</span>
-              <span className="cb-th">상승률</span>
               <span className="cb-th">키워드</span>
+              <span className="cb-th">상승률</span>
               <span className="cb-th text-right">월 검색량</span>
               <span className="cb-th">상태</span>
               <span className="cb-th" title={SCORE_FORMULA}>
@@ -1290,8 +1294,8 @@ function OverseasSection({
           <div className="nt-scroll max-h-[640px] overflow-auto">
             <div className={`${OS_ROW_GRID} sticky top-0 z-[2] bg-ink px-4 py-[9px]`}>
               <span className="cb-th">#</span>
-              <span className="cb-th">급증 배수</span>
               <span className="cb-th">키워드</span>
+              <span className="cb-th">급증 배수</span>
               <span
                 className="cb-th text-right"
                 title="최근 이 말이 제목에 등장한 영상 수. 괄호 안은 그 영상이 퍼진 채널 수 — 한 채널이 여러 영상을 올려도 채널 수는 1로 셉니다."
@@ -1329,20 +1333,12 @@ function OverseasSection({
                           {String(c.rank).padStart(2, "0")}
                         </span>
 
-                        <span
-                          className={`cb-num whitespace-nowrap text-ink ${
-                            big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"
-                          }`}
-                        >
-                          ×{c.lift}
-                        </span>
-
                         <div className="min-w-0">
                           <span
                             className={
                               big
-                                ? "text-[19px] font-black tracking-[-0.02em]"
-                                : "text-[15.5px] font-extrabold"
+                                ? "text-[21px] font-black tracking-[-0.02em]"
+                                : "text-[16px] font-extrabold"
                             }
                           >
                             {c.term}
@@ -1380,6 +1376,14 @@ function OverseasSection({
                             </p>
                           )}
                         </div>
+
+                        <span
+                          className={`cb-num whitespace-nowrap text-ink ${
+                            big ? "text-[20px] tracking-[-0.03em]" : "text-[16px] tracking-[-0.02em]"
+                          }`}
+                        >
+                          ×{c.lift}
+                        </span>
 
                         <span className="text-right">
                           <span

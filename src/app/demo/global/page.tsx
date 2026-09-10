@@ -10,9 +10,12 @@ export const metadata = { title: "크림보드 체험 · 해외 트렌드" };
  * ⚠️ 해외는 국내와 티어 근거가 다르다. 국내 지표는 상승률(%)이라 추세 판정을 묶어 쓰지만,
  *    해외는 지표 자체가 급증 배수라 디자인 명세의 문턱(×4 이상 / ×2~4)을 그대로 쓴다.
  */
-/** 국내 표와 같은 규칙 — 넓은 화면에서만 격자, 휴대폰에서는 세로로 쌓는다. */
+/**
+ * 국내 표와 같은 규칙 — 넓은 화면에서만 격자, 휴대폰에서는 세로로 쌓는다.
+ * ⚠️ 키워드가 순위 바로 뒤다. 먼저 읽혀야 하는 건 "무엇이" 뜨는가지 "얼마나" 가 아니다.
+ */
 const GRID =
-  "lg:grid lg:grid-cols-[44px_120px_1fr_132px_116px] lg:items-center lg:gap-3 px-4";
+  "lg:grid lg:grid-cols-[44px_1fr_120px_132px_116px] lg:items-center lg:gap-3 px-4";
 
 export default function DemoGlobalPage() {
   const t1 = DEMO_OVERSEAS.filter((r) => r.tier === 1);
@@ -51,8 +54,8 @@ export default function DemoGlobalPage() {
       <div className="mb-4 overflow-hidden rounded-[5px] border-2 border-ink">
         <div className={`${GRID} hidden bg-ink py-[9px] lg:grid`}>
           <span className="cb-th">#</span>
-          <span className="cb-th">급증 배수</span>
           <span className="cb-th">키워드</span>
+          <span className="cb-th">급증 배수</span>
           <span className="cb-th text-right">영상수 (채널)</span>
           <span className="cb-th text-right">조회수 (참고)</span>
         </div>
@@ -82,23 +85,16 @@ function Row({ r }: { r: (typeof DEMO_OVERSEAS)[number] }) {
   const big = r.tier === 1;
   return (
     <div className={`${GRID} ${rowClass(r.tier)}`}>
-      <div className="mb-1 flex items-baseline gap-3 lg:mb-0 lg:contents">
-        <span
-          className={`cb-num ${big ? "text-[16px] text-ink" : "text-[14px] !font-extrabold text-ink-3"}`}
-        >
-          {String(r.rank).padStart(2, "0")}
-        </span>
-        <span
-          className={`cb-num whitespace-nowrap text-ink ${
-            big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"
-          }`}
-        >
-          ×{r.lift}
-        </span>
-      </div>
+      <span
+        className={`cb-num mb-1 block lg:mb-0 ${
+          big ? "text-[16px] text-ink" : "text-[14px] !font-extrabold text-ink-3"
+        }`}
+      >
+        {String(r.rank).padStart(2, "0")}
+      </span>
       <div className="min-w-0">
         <span
-          className={big ? "text-[19px] font-black tracking-[-0.02em]" : "text-[15.5px] font-extrabold"}
+          className={big ? "text-[21px] font-black tracking-[-0.02em]" : "text-[16px] font-extrabold"}
         >
           {r.term}
         </span>
@@ -114,6 +110,14 @@ function Row({ r }: { r: (typeof DEMO_OVERSEAS)[number] }) {
           예: {r.example}
         </p>
       </div>
+      <span
+        className={`cb-num mt-1.5 block whitespace-nowrap text-ink lg:mt-0 ${
+          big ? "text-[20px] tracking-[-0.03em]" : "text-[16px] tracking-[-0.02em]"
+        }`}
+      >
+        ×{r.lift}
+      </span>
+
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 lg:mt-0 lg:contents">
         <span className="text-[11px] text-ink-4 lg:hidden">영상수(채널)</span>
         <span className="lg:text-right">

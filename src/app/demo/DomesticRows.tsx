@@ -19,13 +19,15 @@ import { formatCount } from "@/lib/format";
  *    늘어나 순위를 훑는다는 본래 목적이 사라진다.
  *
  * ⚠️ 휴대폰과 넓은 화면의 배치를 **따로 그린다**(하나를 반응형으로 접지 않는다).
- *    두 화면에서 열 순서가 다르기 때문이다 — 넓은 화면은 실제 대시보드와 같이
- *    `순위 → 상승률 → 키워드` 지만, 휴대폰에서 그 순서를 쓰면 제일 큰 글자가
- *    상승률이 되어 **순위가 안 읽힌다**(실사용 피드백). 휴대폰은 순위를 왼쪽
- *    거터로 빼서 세로로 줄을 세우고, 키워드를 첫 줄로 올린다.
+ *    두 화면의 짜임이 다르기 때문이다. 넓은 화면은 실제 대시보드와 같은 한 줄 격자
+ *    (`순위 → 키워드 → 상승률 → …`)지만, 휴대폰에서는 그걸 접어도 순위가 안 읽힌다
+ *    (실사용 피드백). 휴대폰은 순위를 **왼쪽 거터**로 빼서 01·02·03… 이 세로로
+ *    정렬되게 하고, 키워드를 첫 줄에 단독으로 올린다.
+ * ⚠️ 두 배치 모두 **키워드가 수치보다 크다**. 이 표에서 먼저 읽혀야 하는 건
+ *    "무엇이" 뜨는가지 "얼마나" 가 아니다.
  */
 const DESKTOP_GRID =
-  "hidden lg:grid lg:grid-cols-[44px_120px_1fr_100px_120px_140px] lg:items-center lg:gap-3";
+  "hidden lg:grid lg:grid-cols-[44px_1fr_120px_100px_120px_140px] lg:items-center lg:gap-3";
 
 export function DomesticRows({
   rows,
@@ -90,7 +92,7 @@ function MobileRow({
         <div>
           <span
             className={`${
-              big ? "text-[18px] font-black tracking-[-0.02em]" : "text-[15.5px] font-extrabold"
+              big ? "text-[20px] font-black tracking-[-0.02em]" : "text-[16.5px] font-extrabold"
             } underline decoration-chip decoration-2 underline-offset-4`}
           >
             {r.name}
@@ -101,7 +103,7 @@ function MobileRow({
         </div>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <span className="cb-num text-[20px] leading-none tracking-[-0.03em] text-ink">
+          <span className="cb-num text-[17px] leading-none tracking-[-0.03em] text-ink">
             +{r.riseRate.toFixed(1)}%
           </span>
           <StatusChip status={r.status} />
@@ -136,7 +138,7 @@ function MobileRow({
   );
 }
 
-/** 넓은 화면 배치 — 실제 대시보드와 같은 열 순서(순위 → 상승률 → 키워드 → …). */
+/** 넓은 화면 배치 — 실제 대시보드와 같은 열 순서(순위 → 키워드 → 상승률 → …). */
 function DesktopRow({
   r,
   maxScore,
@@ -154,17 +156,10 @@ function DesktopRow({
       >
         {String(r.rank).padStart(2, "0")}
       </span>
-      <span
-        className={`cb-num whitespace-nowrap text-ink ${
-          big ? "text-[24px] tracking-[-0.04em]" : "text-[18px] tracking-[-0.03em]"
-        }`}
-      >
-        +{r.riseRate.toFixed(1)}%
-      </span>
       <div className="min-w-0">
         <span
           className={`${
-            big ? "text-[19px] font-black tracking-[-0.02em]" : "text-[15.5px] font-extrabold"
+            big ? "text-[21px] font-black tracking-[-0.02em]" : "text-[16px] font-extrabold"
           } underline decoration-chip decoration-2 underline-offset-4`}
         >
           {r.name}
@@ -176,6 +171,13 @@ function DesktopRow({
           {expanded ? "이유 닫기 ▴" : "확산이유 ▾"}
         </span>
       </div>
+      <span
+        className={`cb-num whitespace-nowrap text-ink ${
+          big ? "text-[20px] tracking-[-0.03em]" : "text-[16px] tracking-[-0.02em]"
+        }`}
+      >
+        +{r.riseRate.toFixed(1)}%
+      </span>
       <span className={`cb-num text-right text-ink ${big ? "text-[15px]" : "text-[13px]"}`}>
         {r.volume > 0 ? formatCount(r.volume) : "—"}
       </span>
