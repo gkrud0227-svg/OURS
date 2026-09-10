@@ -51,10 +51,6 @@ export default function DemoDomesticPage() {
           즉시 검토 <span className="cb-num text-[16px]">{t1.length}</span>
           <span className="text-[12px] text-ink-4">건</span>
         </span>
-        <span className="h-[14px] w-px bg-divider" />
-        <span className="whitespace-nowrap text-[13px] text-ink">
-          최고 발굴점수 <span className="cb-num text-[16px]">{maxScore}</span>
-        </span>
         <span className="ml-auto text-[12px] font-bold text-ink-3">민음사빵 · 군위사과 · 요거트찹쌀떡</span>
       </div>
 
